@@ -59,7 +59,6 @@ fn replace_keywords(code: &str) -> String {
 }
 
 pub fn run_pycn(code: &str) {
-   pyo3::prepare_freethreaded_python();
    let code = replace_keywords(code);
    let c_code = CString::new(code).unwrap();
    

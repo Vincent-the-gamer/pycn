@@ -88,4 +88,35 @@ Result:
 97
 ```
 
-## WebAssembly
+## Any other environment
+
+PyCN provides dynamic link libraries(dylibs) for any other environment, like Node.js.
+
+You can download dylibs from release.
+
+Example in Node.js:
+```ts
+import { close, DataType, load, open } from "ffi-rs"
+
+// library_name, don't add suffix
+// e.g. dylink-darwin-aarch64
+const library = "library_name" 
+
+// path to library
+const path = "/path/to/.dylib or .so or .dll"
+
+open({
+    library,
+    path
+})
+
+const send = load({
+    library,
+    funcName: "run_my_pycn",
+    retType: DataType.Void,
+    paramsType: [DataType.String],
+    paramsValue: ["打印(\"你好，世界\")"] // print("Hello, world") Chinese version.
+})
+
+close(library)
+```

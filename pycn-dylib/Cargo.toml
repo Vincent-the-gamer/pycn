@@ -1,0 +1,11 @@
+[package]
+name = "pycn-dylib"
+version = "1.0.0"
+edition = "2024"
+
+[lib]
+name = "pycndylib"
+crate-type = ["cdylib"]
+
+[dependencies]
+pycn = { path = "../pycn" }
