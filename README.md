@@ -34,6 +34,17 @@ Keywords mapping: `(key, value)`
 ("导入", "import"),
 ("是", "is"),
 ("不是", "not"),
+("拉姆达", "lambda"),
+("尝试", "try"),
+("异常的情况", "except"),
+("从", "from"),
+("全局的", "global"),
+("过", "pass"),
+("举起", "raise"),
+("异常", "Exception"),
+("异步的", "async"),
+("和", "and"),
+("或", "or"),
 ```
 
 Example: 
