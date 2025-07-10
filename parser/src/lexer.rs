@@ -130,9 +130,11 @@ pub enum Token {
     Float,
     #[regex(r"[0-9]+")]
     Integer,
-    // 字符串
+    // 字符串：支持英文单双引号和中文单双引号
     #[regex(r#"'([^'\\]|\\.)*'"#)]
     #[regex(r#""([^"\\]|\\.)*""#)]
+    #[regex(r#"“([^“”\\]|\\.)*”"#)]
+    #[regex(r#"‘([^‘’\\]|\\.)*’"#)]
     String,
     // 运算符和分隔符
     #[token("**")]
@@ -211,7 +213,7 @@ pub fn lex(input: &str) -> Vec<(Token, String)> {
         ("真", True), ("True", True), ("假", False), ("False", False), ("返回", Return), ("return", Return),
         ("跳出", Break), ("break", Break), ("继续", Continue), ("continue", Continue), ("过", Pass), ("pass", Pass),
         ("导入", Import), ("import", Import), ("从", From), ("from", From), ("作为", As), ("as", As), ("类", Class), ("class", Class),
-        ("尝试", Try), ("try", Try), ("异常的情况", Except), ("except", Except), ("最终", Finally), ("finally", Finally),
+        ("尝试", Try), ("try", Try), ("意外情况", Except), ("except", Except), ("最终", Finally), ("finally", Finally),
         ("举起", Raise), ("raise", Raise), ("断言", Assert), ("assert", Assert), ("删除", Del), ("del", Del),
         ("全局的", Global), ("global", Global), ("非局部", Nonlocal), ("nonlocal", Nonlocal), ("拉姆达", Lambda), ("lambda", Lambda),
         ("产出", Yield), ("yield", Yield), ("等待", Await), ("await", Await), ("异步的", Async), ("async", Async),

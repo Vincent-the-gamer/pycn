@@ -229,6 +229,7 @@ name = "pycn"
 version = "1.0.0"
 dependencies = [
  "clap",
+ "parser",
  "pyo3",
  "pyo3-build-config",
 ]

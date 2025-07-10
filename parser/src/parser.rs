@@ -90,20 +90,38 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                     *pos += 1;
                 }
                 let body = parse_block(tokens, pos);
-                // 处理 elif/else
-                let mut orelse = Vec::new();
-                if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Elif) {
-                    orelse.push(parse_stmt(tokens, pos)?);
-                } else if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Else) {
-                    *pos += 1;
-                    if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Colon) {
+                // 支持链式 elif/else，保证 orelse 只为 else 或下一个 if
+                fn parse_elif_else(tokens: &[(Token, String)], pos: &mut usize) -> Vec<AstNode> {
+                    if let Some((Token::Elif, _)) = tokens.get(*pos) {
                         *pos += 1;
-                    }
-                    while let Some((Token::Newline, _)) = tokens.get(*pos) {
+                        let elif_cond = if let Some(c) = parse_expr(tokens, pos) { c } else { return vec![] };
+                        if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Colon) {
+                            *pos += 1;
+                        }
+                        while let Some((Token::Newline, _)) = tokens.get(*pos) {
+                            *pos += 1;
+                        }
+                        let elif_body = parse_block(tokens, pos);
+                        let elif_orelse = parse_elif_else(tokens, pos);
+                        return vec![AstNode::If {
+                            cond: Box::new(elif_cond),
+                            body: elif_body,
+                            orelse: elif_orelse,
+                        }];
+                    } else if let Some((Token::Else, _)) = tokens.get(*pos) {
                         *pos += 1;
+                        if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Colon) {
+                            *pos += 1;
+                        }
+                        while let Some((Token::Newline, _)) = tokens.get(*pos) {
+                            *pos += 1;
+                        }
+                        return parse_block(tokens, pos);
+                    } else {
+                        return Vec::new();
                     }
-                    orelse = parse_block(tokens, pos);
                 }
+                let orelse = parse_elif_else(tokens, pos);
                 Some(AstNode::If {
                     cond: Box::new(cond),
                     body,
@@ -208,7 +226,7 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
     }
     fn parse_cmp(tokens: &[(Token, String)], pos: &mut usize) -> Option<AstNode> {
         let mut node = parse_add(tokens, pos)?;
-        while let Some((tok, opstr)) = tokens.get(*pos) {
+        while let Some((tok, _)) = tokens.get(*pos) {
             let op = match tok {
                 Token::DoubleEqual => "==",
                 Token::NotEqual => "!=",
@@ -332,6 +350,11 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                 *pos += 1;
                 Some(parse_postfix(node, tokens, pos))
             }
+            Some((Token::Print, _)) => {
+                let node = AstNode::Identifier("print".to_string());
+                *pos += 1;
+                Some(parse_postfix(node, tokens, pos))
+            }
             Some((Token::Identifier, name)) => {
                 let node = AstNode::Identifier(name.clone());
                 *pos += 1;
@@ -413,26 +436,34 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                     Some(AstNode::Set(pairs.into_iter().map(|(k, _)| k).collect()))
                 }
             }
-            // 元组
+            // 括号表达式/元组
             Some((Token::LParen, _)) => {
                 *pos += 1;
-                let mut items = Vec::new();
-                while tokens.get(*pos).map(|t| &t.0) != Some(&Token::RParen) {
-                    match parse_expr(tokens, pos) {
-                        Some(item) => items.push(item),
-                        None => break,
+                let expr = parse_expr(tokens, pos);
+                if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Comma) {
+                    // 逗号，说明是元组
+                    let mut items = vec![];
+                    if let Some(e) = expr { items.push(e); }
+                    while tokens.get(*pos).map(|t| &t.0) != Some(&Token::RParen) {
+                        if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Comma) {
+                            *pos += 1;
+                        }
+                        match parse_expr(tokens, pos) {
+                            Some(item) => items.push(item),
+                            None => break,
+                        }
                     }
-                    if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Comma) {
+                    if tokens.get(*pos).map(|t| &t.0) == Some(&Token::RParen) {
                         *pos += 1;
                     }
-                }
-                if tokens.get(*pos).map(|t| &t.0) == Some(&Token::RParen) {
-                    *pos += 1;
-                }
-                if items.len() == 1 {
-                    Some(items.remove(0))
-                } else {
                     Some(AstNode::Tuple(items))
+                } else {
+                    // 单一表达式，且无逗号，保留括号
+                    let inner = expr?;
+                    if tokens.get(*pos).map(|t| &t.0) == Some(&Token::RParen) {
+                        *pos += 1;
+                    }
+                    Some(AstNode::Paren(Box::new(inner)))
                 }
             }
             _ => None,
@@ -448,4 +479,159 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
         }
     }
     AstNode::Program(stmts)
+}
+
+
+// AstNode 转 Python 源代码
+pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
+    let indent_str = |n| "    ".repeat(n);
+    match node {
+        AstNode::Program(stmts) => stmts.iter().map(|s| ast_to_python(s, indent)).collect::<Vec<_>>().join("\n"),
+        AstNode::Def { name, params, body } => {
+            let params_str = params.join(", ");
+            let body_str = if body.is_empty() {
+                format!("{}pass", indent_str(indent + 1))
+            } else {
+                body.iter().map(|s| ast_to_python(s, indent + 1)).collect::<Vec<_>>().join("\n")
+            };
+            format!("{}def {}({}):\n{}", indent_str(indent), name, params_str, body_str)
+        }
+        AstNode::If { cond, body, orelse } => {
+            // 条件不加括号
+            let cond_str = match &**cond {
+                AstNode::Paren(inner) => ast_to_python(inner, 0), // 去掉条件表达式外层括号
+                _ => ast_to_python(cond, 0)
+            };
+            let body_str = if body.is_empty() {
+                format!("{}pass", indent_str(indent + 1))
+            } else {
+                body.iter().map(|s| ast_to_python(s, indent + 1)).collect::<Vec<_>>().join("\n")
+            };
+            let mut result = format!("{}if {}:\n{}", indent_str(indent), cond_str, body_str);
+            // 平级 elif/else 输出
+            let mut orelse_ref = orelse;
+            while !orelse_ref.is_empty() {
+                if orelse_ref.len() == 1 {
+                    if let AstNode::If { cond: elif_cond, body: elif_body, orelse: elif_orelse } = &orelse_ref[0] {
+                        let elif_cond_str = match &**elif_cond {
+                            AstNode::Paren(inner) => ast_to_python(inner, 0),
+                            _ => ast_to_python(elif_cond, 0)
+                        };
+                        let elif_body_str = if elif_body.is_empty() {
+                            format!("{}pass", indent_str(indent + 1))
+                        } else {
+                            elif_body.iter().map(|s| ast_to_python(s, indent + 1)).collect::<Vec<_>>().join("\n")
+                        };
+                        result.push_str(&format!("\n{}elif {}:\n{}", indent_str(indent), elif_cond_str, elif_body_str));
+                        orelse_ref = elif_orelse;
+                        continue;
+                    }
+                }
+                // else 分支
+                let else_str = orelse_ref.iter().map(|s| ast_to_python(s, indent + 1)).collect::<Vec<_>>().join("\n");
+                result.push_str(&format!("\n{}else:\n{}", indent_str(indent), else_str));
+                break;
+            }
+            result
+        }
+        AstNode::For { var, iter, body } => {
+            let iter_str = ast_to_python(iter, 0);
+            let body_str = if body.is_empty() {
+                format!("{}pass", indent_str(indent + 1))
+            } else {
+                body.iter().map(|s| ast_to_python(s, indent + 1)).collect::<Vec<_>>().join("\n")
+            };
+            format!("{}for {} in {}:\n{}", indent_str(indent), var, iter_str, body_str)
+        }
+        AstNode::Return(val) => {
+            if let Some(expr) = val {
+                format!("{}return {}", indent_str(indent), ast_to_python(expr, 0))
+            } else {
+                format!("{}return", indent_str(indent))
+            }
+        }
+        AstNode::Break => format!("{}break", indent_str(indent)),
+        AstNode::Continue => format!("{}continue", indent_str(indent)),
+        AstNode::Pass => format!("{}pass", indent_str(indent)),
+        AstNode::Assign { name, value } => {
+            format!("{}{} = {}", indent_str(indent), name, ast_to_python(value, 0))
+        }
+        AstNode::BinaryOp { left, op, right } => {
+            // print('xxx') % 变量 这种结构，输出 print('xxx' % 变量)
+            if let AstNode::Call { func, args } = &**left {
+                let func_name = ast_to_python(func, 0);
+                if func_name == "print" && args.len() == 1 {
+                    let str_expr = ast_to_python(&args[0], 0);
+                    let right_str = ast_to_python(right, 0);
+                    return format!("print({} % {})", str_expr, right_str);
+                }
+            }
+            format!("{} {} {}", ast_to_python(left, 0), op, ast_to_python(right, 0))
+        }
+        AstNode::Paren(inner) => {
+            format!("({})", ast_to_python(inner, 0))
+        }
+        AstNode::UnaryOp { op, expr } => {
+            format!("({} {})", op, ast_to_python(expr, 0))
+        }
+        AstNode::Identifier(name) => name.clone(),
+        AstNode::Integer(n) => n.to_string(),
+        AstNode::Float(f) => f.to_string(),
+        AstNode::String(s) => s.to_string().replace('“', "\"").replace('”', "\""),
+        AstNode::Bool(b) => if *b { "True".to_string() } else { "False".to_string() },
+        AstNode::None => "None".to_string(),
+        AstNode::List(items) => {
+            let items_str = items.iter().map(|i| ast_to_python(i, 0)).collect::<Vec<_>>().join(", ");
+            format!("[{}]", items_str)
+        }
+        AstNode::Tuple(items) => {
+            let items_str = items.iter().map(|i| ast_to_python(i, 0)).collect::<Vec<_>>().join(", ");
+            if items.len() == 1 {
+                format!("({},)", items_str)
+            } else {
+                format!("({})", items_str)
+            }
+        }
+        AstNode::Set(items) => {
+            let items_str = items.iter().map(|i| ast_to_python(i, 0)).collect::<Vec<_>>().join(", ");
+            format!("{{{}}}", items_str)
+        }
+        AstNode::Dict(pairs) => {
+            let pairs_str = pairs.iter().map(|(k, v)| format!("{}: {}", ast_to_python(k, 0), ast_to_python(v, 0))).collect::<Vec<_>>().join(", ");
+            format!("{{{}}}", pairs_str)
+        }
+        AstNode::Call { func, args } => {
+            let func_name = ast_to_python(func, 0);
+            if func_name == "print" && !args.is_empty() {
+                if args.len() == 1 {
+                    if let AstNode::BinaryOp { left, op, right } = &args[0] {
+                        if op == "%" {
+                            let left_str = ast_to_python(left, 0);
+                            let right_str = ast_to_python(right, 0);
+                            return format!("{}print({} % {})", indent_str(indent), left_str, right_str);
+                        }
+                    }
+                }
+            }
+            // 其它情况，普通函数调用
+            let args_str = args.iter().map(|a| ast_to_python(a, 0)).collect::<Vec<_>>().join(", ");
+            format!("{}{}({})", indent_str(indent), func_name, args_str)
+        }
+        AstNode::Index { value, index } => {
+            format!("{}[{}]", ast_to_python(value, 0), ast_to_python(index, 0))
+        }
+        AstNode::Range { start, end, step } => {
+            let start_str = ast_to_python(start.as_ref(), 0);
+            let end_str = ast_to_python(end.as_ref(), 0);
+            if let Some(n) = step {
+                let step_str = ast_to_python(n.as_ref(), 0);
+                format!("{}:{}:{}", start_str, end_str, step_str)
+            } else {
+                format!("{}:{}", start_str, end_str)
+            }
+        }
+        AstNode::Attribute { value, attr } => {
+            format!("{}.{}", ast_to_python(value, 0), attr)
+        }
+    }
 }

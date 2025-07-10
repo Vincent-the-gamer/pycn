@@ -8,46 +8,49 @@ Write Python code in Chinese, just for fun ～(∠・ω< )⌒★
 
 You can use `pycn` to run normal Python, **Or `.pycn` codes**. 
 
-Keywords mapping: `(key, value)`
+Keywords mapping: `key => value`
 
 ```
-("定义", "def"),
-("打印", "print"),
-("空", "None"),
-("真", "True"),
-("假", "False"),
-("如果", "if"),
-("要不然", "elif"),
-("否则", "else"),
-("返回", "return"),
-("迭代", "for"),
-("在", "in"),
-("范围", "range"),
-("整数", "int"),
-("小数", "float"),
-("字符串", "str"),
-("长度", "len"),
-("索引迭代", "enumerate"),
-("解析", "eval"),
-("字典", "dict"),
-("类", "class"),
-("导入", "import"),
-("是", "is"),
-("不是", "not"),
-("拉姆达", "lambda"),
-("尝试", "try"),
-("异常的情况", "except"),
-("从", "from"),
-("全局的", "global"),
-("过", "pass"),
-("举起", "raise"),
-("异常", "Exception"),
-("异步的", "async"),
-("和", "and"),
-("或", "or"),
+def => 定义
+if => 如果
+else => 否则
+elif => 要不然
+For => 迭代
+while => 当
+in => 在
+is => 是
+not => 不是
+and => 和
+or => 或
+None => 空
+False => 假
+return => 返回
+break => 跳出
+continue => 继续
+pass => 过
+import => 导入
+from => 从
+as => 作为
+class => 类
+try => 尝试
+except => 意外情况
+finally => 最终
+raise => 举起
+assert => 断言
+del => 删除
+global => 全局的
+nonlocal => 非局部
+lambda => 拉姆达
+yield => 产出
+await => 等待
+async => 异步的
+with => 带上
+match => 匹配
+case => 情况
+print => 打印
 ```
 
-Example: 
+Example 1: 
 
 > [!NOTE]
 > You can run this example by `pycn run -f examples/demo.pycn`
@@ -74,37 +77,6 @@ Example:
     打印（布尔值2）
 
 主函数（）
-```
-
-Result:
-```
-2
-3
-5
-7
-11
-13
-17
-19
-23
-29
-31
-37
-41
-43
-47
-53
-59
-61
-67
-71
-73
-79
-83
-89
-97
-False
-True
 ```
 
 ## Any other environment
