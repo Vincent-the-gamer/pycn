@@ -23,6 +23,7 @@ not => 不是
 and => 和
 or => 或
 None => 空
+True => 真
 False => 假
 return => 返回
 break => 跳出
@@ -135,3 +136,33 @@ load({
 
 close(library)
 ```
+
+# Build
+
+## For local OS
+
+```shell
+# pycn
+cargo build -p pycn --release
+
+# pycn-dylib
+cargo build -p pycn-dylib --release
+```
+
+## Cross platform
+
+Requires `Docker`.
+
+```shell
+# if you don't have cross, install it.  
+# p.s. show your installed binaries by: cargo install --list
+cargo install cross --git https://github.com/cross-rs/cross
+
+# use cross
+cross build -p pycn --release --target x86_64-pc-windows-gnu
+cross build -p pycn-dylib --release --target x86_64-pc-windows-gnu
+```
+
+Targets in the project:
+- x86_64-unknown-linux-gnu
+- x86_64-pc-windows-gnu
