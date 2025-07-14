@@ -11,7 +11,7 @@ Write Python code in Chinese, just for fun ～(∠・ω< )⌒★
 
 1. Download binary from [release](https://github.com/Vincent-the-gamer/pycn/releases), then `rename it` to pycn. (don't change suffix if there's a suffix)
 2. Put it anywhere, then add the folder to your PATH
-3. For binary, run `pycn --help`.
+3. Test env variable by running `pycn --help`.
 4. Run pycn code by `pycn run --file xxx.pycn`
 
 ## Dylibs
