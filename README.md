@@ -2,22 +2,25 @@
 
 Write Python code in Chinese, just for fun ～(∠・ω< )⌒★
 
-# Usage
+> [!NOTE]
+> This repo is open to contribution.
 
-## CLI
+# Installation 
 
-You can use `pycn` to run normal Python, **Or `.pycn` codes**.
+## Binary
 
-## Any other environment
+1. Download binary from [release](https://github.com/Vincent-the-gamer/pycn/releases), then `rename it` to pycn.{suffix}
+2. Put it anywhere, then add the folder to your PATH
+3. For binary, run `pycn --help`.
+4. Run pycn code by `pycn run --file xxx.pycn`
+
+## Dylibs
 
 PyCN provides dynamic link libraries(dylibs) for any other environment, like Node.js.
 
-You can download dylibs from release.
+You can download dylibs from [release](https://github.com/Vincent-the-gamer/pycn/releases).
 
 Example in Node.js:
-
-> [!NOTE]
-> You can run this example by `pnpm run tsx examples/demo.ts`
 
 ```ts
 import { close, DataType, load, open } from "ffi-rs"
@@ -75,6 +78,7 @@ if => 如果
 else => 否则
 elif => 要不然
 for => 迭代
+enumerate => 索引迭代
 while => 当
 in => 在
 is => 是
@@ -110,8 +114,6 @@ case => 情况
 print => 打印
 ```
 
-Example 1: Function
-
 > [!NOTE]
 > You can run this example by `pycn run -f examples/xxx.pycn`
 
@@ -121,8 +123,6 @@ Example 1: Function
 
 # Build
 
-## For local OS
-
 ```shell
 # pycn
 cargo build -p pycn --release
@@ -130,21 +130,3 @@ cargo build -p pycn --release
 # pycn-dylib
 cargo build -p pycn-dylib --release
 ```
-
-## Cross platform
-
-Requires `Docker`.
-
-```shell
-# if you don't have cross, install it.
-# p.s. show your installed binaries by: cargo install --list
-cargo install cross --git https://github.com/cross-rs/cross
-
-# use cross
-cross build -p pycn --release --target x86_64-pc-windows-gnu
-cross build -p pycn-dylib --release --target x86_64-pc-windows-gnu
-```
-
-Targets in the project:
-- x86_64-unknown-linux-gnu
-- x86_64-pc-windows-gnu
