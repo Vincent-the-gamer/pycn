@@ -1,0 +1,14 @@
+# 基于 arm64 架构的 Linux 镜像
+FROM --platform=linux/arm64 ubuntu:22.04
+
+# 安装 Python3 和 Rust
+RUN apt-get update && \
+    apt-get install -y python3 python3-pip curl build-essential && \
+    curl https://sh.rustup.rs -sSf | sh -s -- -y && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# 设置 Rust 环境变量
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# 验证安装
+RUN python3 --version && rustc --version && cargo --version

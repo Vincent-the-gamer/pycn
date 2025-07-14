@@ -123,10 +123,50 @@ print => 打印
 
 # Build
 
+## Locally
+
 ```shell
 # pycn
 cargo build -p pycn --release
 
 # pycn-dylib
+cargo build -p pycn-dylib --release
+```
+
+## Cross Platform
+
+Use `Docker` image.
+
+### Linux arm64
+```shell
+docker pull vincentthegamer/rust-python-ubuntu:latest
+
+# Enter image bash
+docker run -it --rm \
+           -v $(pwd):/home/pycn \
+           vincentthegamer/rust-python-ubuntu bash
+
+# Change directory to your volume map.
+cd /home/pycn
+
+# Build project
+cargo build -p pycn --release
+cargo build -p pycn-dylib --release
+```
+
+## Linux amd64(x64)
+```shell
+docker pull vincentthegamer/rust-python-ubuntu-amd64:latest
+
+# Enter image bash
+docker run -it --rm \
+           -v $(pwd):/home/pycn \
+           vincentthegamer/rust-python-ubuntu-amd64 bash
+
+# Change directory to your volume map.
+cd /home/pycn
+
+# Build project
+cargo build -p pycn --release
 cargo build -p pycn-dylib --release
 ```
