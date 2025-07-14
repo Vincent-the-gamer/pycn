@@ -128,16 +128,25 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                     orelse,
                 })
             }
-            // for
+            // for/迭代语法，支持多个变量
             Some((Token::For, _)) => {
                 *pos += 1;
-                let var = match tokens.get(*pos) {
-                    Some((Token::Identifier, name)) => name.clone(),
-                    _ => return None,
-                };
-                *pos += 1;
+                // 解析变量列表（支持 for 索引值,水果 in enumerate(水果)）
+                let mut vars = Vec::new();
+                while let Some((Token::Identifier, vname)) = tokens.get(*pos) {
+                    vars.push(vname.clone());
+                    *pos += 1;
+                    if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Comma) {
+                        *pos += 1;
+                    } else {
+                        break;
+                    }
+                }
+                // 检查“在”关键字
                 if tokens.get(*pos).map(|t| &t.0) == Some(&Token::In) {
                     *pos += 1;
+                } else {
+                    return None;
                 }
                 let iter = parse_expr(tokens, pos)?;
                 if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Colon) {
@@ -147,11 +156,21 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                     *pos += 1;
                 }
                 let body = parse_block(tokens, pos);
-                Some(AstNode::For {
-                    var,
-                    iter: Box::new(iter),
-                    body,
-                })
+                // 多变量 for 支持
+                if vars.len() == 1 {
+                    Some(AstNode::For {
+                        var: vars[0].clone(),
+                        iter: Box::new(iter),
+                        body,
+                    })
+                } else {
+                    // 多变量 for，变量用逗号连接
+                    Some(AstNode::For {
+                        var: vars.join(", "),
+                        iter: Box::new(iter),
+                        body,
+                    })
+                }
             }
             // return
             Some((Token::Return, _)) => {
