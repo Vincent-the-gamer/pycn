@@ -9,7 +9,7 @@ Write Python code in Chinese, just for fun ～(∠・ω< )⌒★
 
 ## Binary
 
-1. Download binary from [release](https://github.com/Vincent-the-gamer/pycn/releases), then `rename it` to pycn.{suffix}
+1. Download binary from [release](https://github.com/Vincent-the-gamer/pycn/releases), then `rename it` to pycn. (don't change suffix if there's a suffix)
 2. Put it anywhere, then add the folder to your PATH
 3. For binary, run `pycn --help`.
 4. Run pycn code by `pycn run --file xxx.pycn`
@@ -154,7 +154,7 @@ cargo build -p pycn --release
 cargo build -p pycn-dylib --release
 ```
 
-## Linux amd64(x64)
+### Linux amd64(x64)
 ```shell
 docker pull vincentthegamer/rust-python-ubuntu-amd64:latest
 
