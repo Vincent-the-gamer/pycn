@@ -5,6 +5,14 @@ Write Python code in Chinese, just for fun ～(∠・ω< )⌒★
 > [!NOTE]
 > This repo is open to contribution.
 
+# Playground
+
+Play **Pycn** at: https://mayu.vince-g.xyz/code-runner
+
+Remember to switch language to `pycn`
+
+![playground](.github/playground.png)
+
 # Installation 
 
 ## Binary
