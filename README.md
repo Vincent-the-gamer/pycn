@@ -68,7 +68,7 @@ load({
 close(library)
 ```
 
-## Webassembly code parser
+## WebAssembly code parser
 This wasm package is only to parse `.pycn` to Python code, you can run it with [PyOxidizer](https://github.com/indygreg/PyOxidizer).
 
 Download wasm package from [release](https://github.com/Vincent-the-gamer/pycn/releases).
