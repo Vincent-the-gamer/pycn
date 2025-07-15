@@ -1,6 +1,6 @@
 [package]
 name = "pycn"
-version = "1.0.0"
+version.workspace = true
 description = "Write Python in Chinese."
 edition = "2024"
 

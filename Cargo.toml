@@ -1,7 +1,9 @@
 [workspace]
 resolver = "3"
+package.version = "1.0.0"
 members = [ 
-    "parser",
+    "parser", 
+    "parser-wasm",
     "pycn", 
     "pycn-dylib"
 ]
