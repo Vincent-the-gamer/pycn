@@ -28,7 +28,7 @@ pub fn use_cli() {
             let has_main_pycn = fs::exists("./main.pycn").unwrap();
             let has_main = fs::exists("./main.py").unwrap();
 
-            if let Some(file) = file {            
+            if let Some(file) = file {   
                 run_pycn_file(&file);
                 return
             } 

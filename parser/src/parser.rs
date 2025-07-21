@@ -39,6 +39,66 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
     }
 
     fn parse_stmt(tokens: &[(Token, String)], pos: &mut usize) -> Option<AstNode> {
+        // 导入 xxx [作为 yyy]
+        if let Some((Token::Import, _)) = tokens.get(*pos) {
+            *pos += 1;
+            let module = if let Some((Token::Identifier, name)) = tokens.get(*pos) {
+                name.clone()
+            } else {
+                return None;
+            };
+            *pos += 1;
+            let alias = if let Some((Token::As, _)) = tokens.get(*pos) {
+                *pos += 1;
+                if let Some((Token::Identifier, alias_name)) = tokens.get(*pos) {
+                    let a = Some(alias_name.clone());
+                    *pos += 1;
+                    a
+                } else {
+                    return None;
+                }
+            } else {
+                None
+            };
+            return Some(AstNode::Import { module, alias });
+        }
+        // 从 xxx 导入 yyy [作为 zzz]
+        if let Some((Token::From, _)) = tokens.get(*pos) {
+            *pos += 1;
+            let module = if let Some((Token::Identifier, name)) = tokens.get(*pos) {
+                name.clone()
+            } else {
+                return None;
+            };
+            *pos += 1;
+            if tokens.get(*pos).map(|t| &t.0) != Some(&Token::Import) {
+                return None;
+            }
+            *pos += 1;
+            let mut names = Vec::new();
+            loop {
+                if let Some((Token::Identifier, name)) = tokens.get(*pos) {
+                    let mut alias = None;
+                    *pos += 1;
+                    if let Some((Token::As, _)) = tokens.get(*pos) {
+                        *pos += 1;
+                        if let Some((Token::Identifier, alias_name)) = tokens.get(*pos) {
+                            alias = Some(alias_name.clone());
+                            *pos += 1;
+                        } else {
+                            return None;
+                        }
+                    }
+                    names.push((name.clone(), alias));
+                    if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Comma) {
+                        *pos += 1;
+                        continue;
+                    }
+                }
+                break;
+            }
+            return Some(AstNode::ImportFrom { module, names });
+        }
         match tokens.get(*pos) {
             // 函数定义
             Some((Token::Def, _)) => {
@@ -319,11 +379,22 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
     fn parse_atom(tokens: &[(Token, String)], pos: &mut usize) -> Option<AstNode> {
         // 支持属性、索引、嵌套调用
         fn parse_postfix(mut node: AstNode, tokens: &[(Token, String)], pos: &mut usize) -> AstNode {
+            // 属性访问：a.b
             loop {
                 match tokens.get(*pos) {
-                    // 暂不支持 Token::Dot，直接跳过属性链式调用
-                    // 你可以在 lexer.rs 增加 Dot 词法支持后再解开此分支
-                    // Some((Token::Dot, _)) => { ... }
+                    Some((Token::Dot, _)) => {
+                        *pos += 1;
+                        if let Some((Token::Identifier, attr)) = tokens.get(*pos) {
+                            node = AstNode::Attribute {
+                                value: Box::new(node),
+                                attr: attr.clone(),
+                            };
+                            *pos += 1;
+                        } else {
+                            break;
+                        }
+                    }
+                    // ...existing code for LBracket, LParen...
                     Some((Token::LBracket, _)) => {
                         *pos += 1;
                         let index = match parse_expr(tokens, pos) {
@@ -366,11 +437,6 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
         match tokens.get(*pos) {
             Some((Token::BuiltInFunc(name), _)) => {
                 let node = AstNode::Identifier(name.clone());
-                *pos += 1;
-                Some(parse_postfix(node, tokens, pos))
-            }
-            Some((Token::Print, _)) => {
-                let node = AstNode::Identifier("print".to_string());
                 *pos += 1;
                 Some(parse_postfix(node, tokens, pos))
             }
@@ -500,7 +566,6 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
     AstNode::Program(stmts)
 }
 
-
 // AstNode 转 Python 源代码
 pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
     let indent_str = |n| "    ".repeat(n);
@@ -576,7 +641,6 @@ pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
             format!("{}{} = {}", indent_str(indent), name, ast_to_python(value, 0))
         }
         AstNode::BinaryOp { left, op, right } => {
-            // print('xxx') % 变量 这种结构，输出 print('xxx' % 变量)
             if let AstNode::Call { func, args } = &**left {
                 let func_name = ast_to_python(func, 0);
                 if func_name == "print" && args.len() == 1 {
@@ -651,6 +715,23 @@ pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
         }
         AstNode::Attribute { value, attr } => {
             format!("{}.{}", ast_to_python(value, 0), attr)
+        }
+        AstNode::Import { module, alias } => {
+            if let Some(a) = alias {
+                format!("import {} as {}", module, a)
+            } else {
+                format!("import {}", module)
+            }
+        }
+        AstNode::ImportFrom { module, names } => {
+            let names_str = names.iter().map(|(n, a)| {
+                if let Some(alias) = a {
+                    format!("{} as {}", n, alias)
+                } else {
+                    n.clone()
+                }
+            }).collect::<Vec<_>>().join(", ");
+            format!("from {} import {}", module, names_str)
         }
     }
 }

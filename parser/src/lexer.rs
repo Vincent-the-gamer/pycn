@@ -114,9 +114,6 @@ pub enum Token {
     #[token("case")]
     #[token("情况")]
     Case,
-    #[token("print")]
-    #[token("打印")]
-    Print,
 
     // 内置函数
     BuiltInFunc(String),
@@ -219,8 +216,7 @@ pub fn lex(input: &str) -> Vec<(Token, String)> {
         ("举起", Raise), ("raise", Raise), ("断言", Assert), ("assert", Assert), ("删除", Del), ("del", Del),
         ("全局的", Global), ("global", Global), ("非局部", Nonlocal), ("nonlocal", Nonlocal), ("拉姆达", Lambda), ("lambda", Lambda),
         ("产出", Yield), ("yield", Yield), ("等待", Await), ("await", Await), ("异步的", Async), ("async", Async),
-        ("带上", With), ("with", With), ("匹配", Match), ("match", Match), ("情况", Case), ("case", Case),
-        ("打印", Print), ("print", Print)
+        ("带上", With), ("with", With), ("匹配", Match), ("match", Match), ("情况", Case), ("case", Case)
     ].into_iter().collect();
     let mut tokens = Vec::new();
     let mut indents = vec![0];

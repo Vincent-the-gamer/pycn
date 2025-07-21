@@ -25,5 +25,7 @@ pub enum AstNode {
     Range { start: Box<AstNode>, end: Box<AstNode>, step: Option<Box<AstNode>> },
     Index { value: Box<AstNode>, index: Box<AstNode> },
     Attribute { value: Box<AstNode>, attr: String },
+    Import { module: String, alias: Option<String> },
+    ImportFrom { module: String, names: Vec<(String, Option<String>)> },
     Pass,
 }

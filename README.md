@@ -2,9 +2,6 @@
 
 Write Python code in Chinese, just for fun ～(∠・ω< )⌒★
 
-> [!NOTE]
-> This repo is open to contribution.
-
 # Playground
 
 Play **Pycn** at: https://mayu.vince-g.xyz/code-runner
@@ -133,6 +130,7 @@ print => 打印
 - [function.pycn](examples/function.pycn)
 - [enumerate.pycn](examples/enumerate.pycn)
 - [print.pycn](examples/print.pycn)
+- [import.pycn](examples/import.pycn)
 
 # Build
 
