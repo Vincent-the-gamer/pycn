@@ -14,7 +14,12 @@ Remember to switch language to `pycn`
 
 ## Binary
 
-1. Download binary from [release](https://github.com/Vincent-the-gamer/pycn/releases), then `rename it` to pycn. (don't change suffix if there's a suffix)
+1. Download binary from [release](https://github.com/Vincent-the-gamer/pycn/releases), then `rename it` to pycn. (don't change suffix if there's a suffix), you can also copy the link and download in terminal.
+```shell
+# example
+curl -LJO https://github.com/Vincent-the-gamer/pycn/releases/download/v1.0.0/pycn-darwin-aarch64
+```
+
 2. Put it anywhere, then add the folder to your PATH
 3. Test env variable by running `pycn --help`.
 4. Run pycn code by `pycn run --file xxx.pycn`
@@ -125,7 +130,7 @@ print => 打印
 ```
 
 > [!NOTE]
-> You can run this example by `pycn run -f examples/xxx.pycn`
+> You can run these examples by `pycn run -f examples/xxx.pycn`
 
 - [function.pycn](examples/function.pycn)
 - [enumerate.pycn](examples/enumerate.pycn)
