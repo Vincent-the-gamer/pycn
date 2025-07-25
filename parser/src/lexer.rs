@@ -164,6 +164,24 @@ pub enum Token {
     #[token("/")]
     #[token("除")]
     Slash,
+    #[token("&")]
+    #[token("按位与")]
+    BitwiseAnd,
+    #[token("|")]
+    #[token("按位或")]
+    BitwiseOr,
+    #[token("^")]
+    #[token("按位异或")]
+    BitwiseXor,
+    #[token("~")]
+    #[token("按位取反")]
+    BitwiseNot,
+    #[token("<<")]
+    #[token("左移")]
+    LeftShift,
+    #[token(">>")]
+    #[token("右移")]
+    RightShift,
     #[token(".")]
     Dot,
     #[token("(")]

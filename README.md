@@ -56,7 +56,7 @@ load({
     如果 被判断的数 小于 2：
         返回 假
     迭代 数1 在 范围（2，整数（被判断的数 取幂 0.5）加 1）：
-        如果 被判断的数 取模 数1 等于 0：
+        如果 被判断的数 取余 数1 等于 0：
             返回 假
     返回 真
 
@@ -120,22 +120,30 @@ Keywords mapping from `pycn` to `Python`: `key => value`
 - nonlocal => 非局部
 - lambda => 拉姆达
 - yield => 产出
-await => 等待
-async => 异步的
-with => 带上
-match => 匹配
-case => 情况
-print => 打印
+- await => 等待
+- async => 异步的
+- with => 带上
+- match => 匹配
+- case => 情况
+- print => 打印
 
-`v1.0.2` new feature -- support Chinese operator:
 
-+ => 加
-- => 减
-* => 乘
-/ => 除
-// => 地板除
-= => 赋值为
-% => 取余
+Operators in Chinese:
+- \+ => 加
+- \- => 减
+- \* => 乘
+- / => 除
+- // => 地板除
+- = => 赋值为
+- % => 取余/取模
+- ** => 取幂
+- & => 按位与
+- | => 按位或
+- ^ => 按位异或
+- ~ => 按位取反
+- << => 左移
+- \>> => 右移
+
 
 > [!NOTE]
 > You can run these examples by `pycn run -f examples/xxx.pycn`
@@ -144,7 +152,8 @@ print => 打印
 - [索引迭代.pycn](examples/索引迭代.pycn)
 - [打印.pycn](examples/打印.pycn)
 - [导入.pycn](examples/导入.pycn)
-- [类.pycn](examples.类.pycn)
+- [类.pycn](examples/类.pycn)
+- [位运算.pycn](examples/位运算.pycn)
 
 # Build
 

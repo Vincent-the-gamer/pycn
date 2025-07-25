@@ -427,7 +427,7 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
         pos: &mut usize,
         class_names: &std::collections::HashSet<String>,
     ) -> Option<AstNode> {
-        let mut node = parse_add(tokens, pos, class_names)?;
+        let mut node = parse_bitwise_or(tokens, pos, class_names)?;
         while let Some((tok, _)) = tokens.get(*pos) {
             let op = match tok {
                 Token::DoubleEqual => "==",
@@ -436,6 +436,79 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                 Token::LessEqual => "<=",
                 Token::Greater => ">",
                 Token::GreaterEqual => ">=",
+                _ => break,
+            };
+            *pos += 1;
+            let right = parse_bitwise_or(tokens, pos, class_names)?;
+            node = AstNode::BinaryOp {
+                left: Box::new(node),
+                op: op.to_string(),
+                right: Box::new(right),
+            };
+        }
+        Some(node)
+    }
+    fn parse_bitwise_or(
+        tokens: &[(Token, String)],
+        pos: &mut usize,
+        class_names: &std::collections::HashSet<String>,
+    ) -> Option<AstNode> {
+        let mut node = parse_bitwise_xor(tokens, pos, class_names)?;
+        while let Some((Token::BitwiseOr, _)) = tokens.get(*pos) {
+            *pos += 1;
+            let right = parse_bitwise_xor(tokens, pos, class_names)?;
+            node = AstNode::BinaryOp {
+                left: Box::new(node),
+                op: "|".to_string(),
+                right: Box::new(right),
+            };
+        }
+        Some(node)
+    }
+    fn parse_bitwise_xor(
+        tokens: &[(Token, String)],
+        pos: &mut usize,
+        class_names: &std::collections::HashSet<String>,
+    ) -> Option<AstNode> {
+        let mut node = parse_bitwise_and(tokens, pos, class_names)?;
+        while let Some((Token::BitwiseXor, _)) = tokens.get(*pos) {
+            *pos += 1;
+            let right = parse_bitwise_and(tokens, pos, class_names)?;
+            node = AstNode::BinaryOp {
+                left: Box::new(node),
+                op: "^".to_string(),
+                right: Box::new(right),
+            };
+        }
+        Some(node)
+    }
+    fn parse_bitwise_and(
+        tokens: &[(Token, String)],
+        pos: &mut usize,
+        class_names: &std::collections::HashSet<String>,
+    ) -> Option<AstNode> {
+        let mut node = parse_shift(tokens, pos, class_names)?;
+        while let Some((Token::BitwiseAnd, _)) = tokens.get(*pos) {
+            *pos += 1;
+            let right = parse_shift(tokens, pos, class_names)?;
+            node = AstNode::BinaryOp {
+                left: Box::new(node),
+                op: "&".to_string(),
+                right: Box::new(right),
+            };
+        }
+        Some(node)
+    }
+    fn parse_shift(
+        tokens: &[(Token, String)],
+        pos: &mut usize,
+        class_names: &std::collections::HashSet<String>,
+    ) -> Option<AstNode> {
+        let mut node = parse_add(tokens, pos, class_names)?;
+        while let Some((tok, _)) = tokens.get(*pos) {
+            let op = match tok {
+                Token::LeftShift => "<<",
+                Token::RightShift => ">>",
                 _ => break,
             };
             *pos += 1;
@@ -500,11 +573,16 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
         pos: &mut usize,
         class_names: &std::collections::HashSet<String>,
     ) -> Option<AstNode> {
-        if let Some((Token::Not, _)) = tokens.get(*pos) {
+        if let Some((tok, _)) = tokens.get(*pos) {
+            let op = match tok {
+                Token::Not => "not",
+                Token::BitwiseNot => "~",
+                _ => return parse_atom(tokens, pos, class_names),
+            };
             *pos += 1;
             let expr = parse_unary(tokens, pos, class_names)?;
             Some(AstNode::UnaryOp {
-                op: "not".to_string(),
+                op: op.to_string(),
                 expr: Box::new(expr),
             })
         } else {
