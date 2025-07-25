@@ -4,5 +4,6 @@ version.workspace = true
 edition = "2024"
 
 [dependencies]
+chinese2digits = "1.0.0"
 logos = "0.15.0"
 thiserror = "2.0.12"

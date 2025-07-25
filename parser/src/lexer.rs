@@ -1,4 +1,5 @@
 use logos::Logos;
+use crate::chinese_to_digits::chinese_to_digits;
 
 #[derive(Logos, Debug, PartialEq, Clone)]
 pub enum Token {
@@ -127,6 +128,9 @@ pub enum Token {
     Float,
     #[regex(r"[0-9]+")]
     Integer,
+    // 中文数字（包括：零一二三四五六七八九十百千万等）
+    #[regex(r"[点零一二三四五六七八九十百千万亿壹贰叁肆伍陆柒捌玖拾佰仟]+", priority = 3)]
+    ChineseNumber,
     // 字符串：支持format string格式化字符串，支持英文单双引号和中文单双引号
     #[regex(r#"f'([^'\\]|\\.)*'"#)]
     #[regex(r#"f\"([^\"\\]|\\.)*\""#)]
@@ -162,7 +166,7 @@ pub enum Token {
     #[token("乘")]
     Star,
     #[token("/")]
-    #[token("除")]
+    #[token("除以")]
     Slash,
     #[token("&")]
     #[token("按位与")]
@@ -390,12 +394,25 @@ pub fn lex(input: &str) -> Vec<(Token, String)> {
                         }
                     }
                 }
+                
                 if first_token && pending_newline {
                     tokens.push((Token::Newline, "\n".to_string()));
                     pending_newline = false;
                 }
                 first_token = false;
-                tokens.push((tok.clone(), slice));
+                
+                // 处理中文数字转换
+                if let Token::ChineseNumber = tok {
+                    let converted = chinese_to_digits(slice.clone());
+                    // 检查转换后的结果是否包含小数点
+                    if converted.contains('.') {
+                        tokens.push((Token::Float, converted));
+                    } else {
+                        tokens.push((Token::Integer, converted));
+                    }
+                } else {
+                    tokens.push((tok.clone(), slice));
+                }
             }
         }
         tokens.push((Token::Newline, "\n".to_string()));
