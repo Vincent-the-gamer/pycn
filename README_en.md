@@ -1,47 +1,47 @@
 # PyCN
 
-中文文档 | [English](./README_en.md)
+[中文文档](./README.md) | English
 
-用中文写Python代码, 图一乐～(∠・ω< )⌒★
+Write Python code in Chinese, just for fun ～(∠・ω< )⌒★
 
-# 游乐场
+# Playground
 
-快速体验**Pycn**：https://mayu.vince-g.xyz/code-runner
+Play **Pycn** at: https://mayu.vince-g.xyz/code-runner
 
-记得把语言切换至 `pycn`
+Remember to switch language to `pycn`
 
 ![playground](.github/playground.png)
 
-# 安装 
+# Installation 
 
-## 二进制可执行文件
+## Binary
 
-1. 下载可执行文件： [release](https://github.com/Vincent-the-gamer/pycn/releases), `重命名`为pycn. (如果有后缀，不要修改), 你也可以复制下面的shell命令下载.
+1. Download binary from [release](https://github.com/Vincent-the-gamer/pycn/releases), then `rename it` to pycn. (don't change suffix if there's a suffix), you can also copy the link and download in terminal.
 ```shell
-# 例子
+# example
 curl -LJO https://github.com/Vincent-the-gamer/pycn/releases/download/v1.0.0/pycn-darwin-aarch64
 ```
 
-2. 下载后的二进制文件随便放入一个文件夹，将这个文件夹添加进你的环境变量 PATH 中。
-3. 使用 `pycn --help` 命令来测试环境变量是否生效.
-4. 使用 `pycn run --file xxx.pycn` 命令来运行`.pycn` 代码
+2. Put it anywhere, then add the folder to your PATH
+3. Test env variable by running `pycn --help`.
+4. Run pycn code by `pycn run --file xxx.pycn`
 
-## 动态链接库
+## Dylibs
 
-PyCN为`Node.js`等多个环境提供动态链接库(dylibs)
+PyCN provides dynamic link libraries(dylibs) for any other environment, like Node.js.
 
-下载动态链接库：[release](https://github.com/Vincent-the-gamer/pycn/releases).
+You can download dylibs from [release](https://github.com/Vincent-the-gamer/pycn/releases).
 
-Node.js案例:
+Example in Node.js:
 
 ```ts
 import { close, DataType, load, open } from "ffi-rs"
 
-// 动态链接库名称, 不加后缀
-// 例：dylink-darwin-aarch64
+// library_name, don't add suffix
+// e.g. dylink-darwin-aarch64
 const library = "library_name"
 
-// 动态链接库路径
+// path to library
 const path = "/path/to/.dylib or .so or .dll"
 
 open({
@@ -80,10 +80,12 @@ load({
 close(library)
 ```
 
-## WebAssembly代码编译器
-Wasm包仅仅实现`.pycn` 转换为Python代码的功能, 要运行代码，你需要自己使用Python运行时，例如：[Pyoxidizer](https://github.com/indygreg/PyOxidizer)，这个工具可以将Python代码构建为可执行文件。
+## WebAssembly code parser
+This wasm packages is only to parse `.pycn` to Python code.
 
-如果是网页，可以使用[Pyodide](https://github.com/pyodide/pyodide)，这是一个Wasm Python运行时。
+You will need a tool to run your code, like [Pyoxidizer](https://github.com/indygreg/PyOxidizer), which can package your Python code into an executable file.
+
+In website, you can run it with [Pyodide](https://github.com/pyodide/pyodide), it's a Wasm Python runtime.
 
 Download wasm package from [release](https://github.com/Vincent-the-gamer/pycn/releases).
 
