@@ -147,6 +147,7 @@ pub enum Token {
     FloorDiv,
     #[token("%")]
     #[token("取余")]
+    #[token("取模")]
     Mod,
     #[token("=")]
     #[token("赋值为")]
