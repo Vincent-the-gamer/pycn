@@ -85,11 +85,11 @@ Wasm包仅仅实现`.pycn` 转换为Python代码的功能, 要运行代码，你
 
 如果是网页，可以使用[Pyodide](https://github.com/pyodide/pyodide)，这是一个Wasm Python运行时。
 
-Download wasm package from [release](https://github.com/Vincent-the-gamer/pycn/releases).
+下载Wasm包： [release](https://github.com/Vincent-the-gamer/pycn/releases).
 
-# Examples
+# 案例
 
-Keywords mapping from `pycn` to `Python`: `key => value`
+关键词映射：从 `pycn` 到 `Python`: `key => value`
 
 - def => 定义
 - if => 如果
@@ -132,7 +132,7 @@ Keywords mapping from `pycn` to `Python`: `key => value`
 - print => 打印
 
 
-Operators in Chinese:
+中文运算符映射:
 - \+ => 加
 - \- => 减
 - \* => 乘
@@ -150,7 +150,7 @@ Operators in Chinese:
 
 
 > [!NOTE]
-> You can run these examples by `pycn run -f examples/xxx.pycn`
+> 你可以使用命令： `pycn run -f examples/xxx.pycn` 来运行案例代码
 
 - [函数.pycn](examples/函数.pycn)
 - [索引迭代.pycn](examples/索引迭代.pycn)
@@ -160,9 +160,9 @@ Operators in Chinese:
 - [位运算.pycn](examples/位运算.pycn)
 - [中文数字.pycn](examples/中文数字.pycn)
 
-# Build
+# 构建
 
-## Locally
+## 本地构建
 
 ```shell
 # pycn
@@ -172,23 +172,23 @@ cargo build -p pycn --release
 cargo build -p pycn-dylib --release
 ```
 
-## Cross Platform
+## 跨平台构建
 
-Use `Docker` image.
+使用 `Docker` 镜像.
 
 ### Linux arm64
 ```shell
 docker pull vincentthegamer/rust-python-ubuntu:latest
 
-# Enter image bash
+# 进入镜像bash终端
 docker run -it --rm \
            -v $(pwd):/home/pycn \
            vincentthegamer/rust-python-ubuntu bash
 
-# Change directory to your volume map.
+# 切换路径至你挂载的项目路径
 cd /home/pycn
 
-# Build project
+# 构建项目
 cargo build -p pycn --release
 cargo build -p pycn-dylib --release
 ```
@@ -197,15 +197,15 @@ cargo build -p pycn-dylib --release
 ```shell
 docker pull vincentthegamer/rust-python-ubuntu-amd64:latest
 
-# Enter image bash
+# 进入镜像bash终端
 docker run -it --rm \
            -v $(pwd):/home/pycn \
            vincentthegamer/rust-python-ubuntu-amd64 bash
 
-# Change directory to your volume map.
+# 切换路径至你挂载的项目路径
 cd /home/pycn
 
-# Build project
+# 构建项目
 cargo build -p pycn --release
 cargo build -p pycn-dylib --release
 ```
