@@ -3,13 +3,28 @@ use crate::{ast::AstNode, lexer::Token};
 // 简单递归下降parser
 pub fn parse(tokens: &[(Token, String)]) -> AstNode {
     let mut pos = 0;
+    // 收集所有类名
+    let mut class_names = std::collections::HashSet::new();
+    let mut scan_pos = 0;
+    while scan_pos < tokens.len() {
+        if let Some((Token::Class, _)) = tokens.get(scan_pos) {
+            if let Some((Token::Identifier, cname)) = tokens.get(scan_pos + 1) {
+                class_names.insert(cname.clone());
+            }
+        }
+        scan_pos += 1;
+    }
 
-    fn parse_block(tokens: &[(Token, String)], pos: &mut usize) -> Vec<AstNode> {
+    fn parse_block(
+        tokens: &[(Token, String)],
+        pos: &mut usize,
+        class_names: &std::collections::HashSet<String>,
+    ) -> Vec<AstNode> {
         let mut body = Vec::new();
         if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Indent) {
             *pos += 1;
             while *pos < tokens.len() && tokens.get(*pos).map(|t| &t.0) != Some(&Token::Dedent) {
-                if let Some(stmt) = parse_stmt(tokens, pos) {
+                if let Some(stmt) = parse_stmt(tokens, pos, class_names) {
                     body.push(stmt);
                 } else {
                     *pos += 1;
@@ -22,7 +37,7 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                 *pos += 1;
             }
         } else {
-            if let Some(stmt) = parse_stmt(tokens, pos) {
+            if let Some(stmt) = parse_stmt(tokens, pos, class_names) {
                 body.push(stmt);
             }
             while *pos < tokens.len()
@@ -38,7 +53,11 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
         body
     }
 
-    fn parse_stmt(tokens: &[(Token, String)], pos: &mut usize) -> Option<AstNode> {
+    fn parse_stmt(
+        tokens: &[(Token, String)],
+        pos: &mut usize,
+        class_names: &std::collections::HashSet<String>,
+    ) -> Option<AstNode> {
         // 导入 xxx [作为 yyy]
         if let Some((Token::Import, _)) = tokens.get(*pos) {
             *pos += 1;
@@ -99,9 +118,48 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
             }
             return Some(AstNode::ImportFrom { module, names });
         }
+        // 递归elif/else辅助函数，移到外部
+        fn parse_elif_else(
+            tokens: &[(Token, String)],
+            pos: &mut usize,
+            class_names: &std::collections::HashSet<String>,
+        ) -> Vec<AstNode> {
+            if let Some((Token::Elif, _)) = tokens.get(*pos) {
+                *pos += 1;
+                let elif_cond = if let Some(c) = parse_expr(tokens, pos, class_names) {
+                    c
+                } else {
+                    return vec![];
+                };
+                if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Colon) {
+                    *pos += 1;
+                }
+                while let Some((Token::Newline, _)) = tokens.get(*pos) {
+                    *pos += 1;
+                }
+                let elif_body = parse_block(tokens, pos, class_names);
+                let elif_orelse = parse_elif_else(tokens, pos, class_names);
+                return vec![AstNode::If {
+                    cond: Box::new(elif_cond),
+                    body: elif_body,
+                    orelse: elif_orelse,
+                }];
+            } else if let Some((Token::Else, _)) = tokens.get(*pos) {
+                *pos += 1;
+                if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Colon) {
+                    *pos += 1;
+                }
+                while let Some((Token::Newline, _)) = tokens.get(*pos) {
+                    *pos += 1;
+                }
+                return parse_block(tokens, pos, class_names);
+            } else {
+                return Vec::new();
+            }
+        }
         match tokens.get(*pos) {
-            // 函数定义
-            Some((Token::Def, _)) => {
+            // 类定义
+            Some((Token::Class, _)) => {
                 *pos += 1;
                 let name = tokens.get(*pos).and_then(|t| {
                     if let Token::Identifier = t.0 {
@@ -111,20 +169,72 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                     }
                 })?;
                 *pos += 1;
+                
+                // 解析继承的基类
+                let mut bases = Vec::new();
+                if tokens.get(*pos).map(|t| &t.0) == Some(&Token::LParen) {
+                    *pos += 1;
+                    while tokens.get(*pos).map(|t| &t.0) != Some(&Token::RParen) {
+                        match tokens.get(*pos) {
+                            Some((Token::Identifier, base_name)) => {
+                                bases.push(base_name.clone());
+                                *pos += 1;
+                            }
+                            Some((Token::BuiltInFunc(func_name), _)) => {
+                                bases.push(func_name.clone());
+                                *pos += 1;
+                            }
+                            _ => break,
+                        }
+                        if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Comma) {
+                            *pos += 1;
+                        }
+                    }
+                    if tokens.get(*pos).map(|t| &t.0) == Some(&Token::RParen) {
+                        *pos += 1;
+                    }
+                }
+                
+                if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Colon) {
+                    *pos += 1;
+                }
+                while let Some((Token::Newline, _)) = tokens.get(*pos) {
+                    *pos += 1;
+                }
+                let body = parse_block(tokens, pos, class_names);
+                Some(AstNode::Class { name, bases, body })
+            }
+            // 函数定义
+            Some((Token::Def, _)) => {
+                *pos += 1;
+                let name = tokens.get(*pos).and_then(|t| {
+                    match &t.0 {
+                        Token::Identifier => Some(t.1.clone()),
+                        Token::BuiltInFunc(func_name) => Some(func_name.clone()),
+                        _ => None
+                    }
+                })?;
+                *pos += 1;
                 if tokens.get(*pos).map(|t| &t.0) != Some(&Token::LParen) {
                     return None;
                 }
                 *pos += 1;
                 let mut params = Vec::new();
                 while tokens.get(*pos).map(|t| &t.0) != Some(&Token::RParen) {
-                    if let Some((Token::Identifier, pname)) = tokens.get(*pos) {
-                        params.push(pname.clone());
-                        *pos += 1;
-                        if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Comma) {
+                    match tokens.get(*pos) {
+                        Some((Token::Identifier, pname)) => {
+                            params.push(pname.clone());
                             *pos += 1;
                         }
-                    } else {
-                        break;
+                        Some((Token::BuiltInFunc(func_name), _)) => {
+                            // 在函数参数上下文中，内置函数名应该被当作普通参数名
+                            params.push(func_name.clone());
+                            *pos += 1;
+                        }
+                        _ => break,
+                    }
+                    if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Comma) {
+                        *pos += 1;
                     }
                 }
                 if tokens.get(*pos).map(|t| &t.0) == Some(&Token::RParen) {
@@ -136,52 +246,22 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                 while let Some((Token::Newline, _)) = tokens.get(*pos) {
                     *pos += 1;
                 }
-                let body = parse_block(tokens, pos);
+                let body = parse_block(tokens, pos, class_names);
                 Some(AstNode::Def { name, params, body })
             }
             // if/elif/else
             Some((Token::If, _)) => {
                 *pos += 1;
-                let cond = parse_expr(tokens, pos)?;
+                let cond = parse_expr(tokens, pos, class_names)?;
                 if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Colon) {
                     *pos += 1;
                 }
                 while let Some((Token::Newline, _)) = tokens.get(*pos) {
                     *pos += 1;
                 }
-                let body = parse_block(tokens, pos);
+                let body = parse_block(tokens, pos, class_names);
                 // 支持链式 elif/else，保证 orelse 只为 else 或下一个 if
-                fn parse_elif_else(tokens: &[(Token, String)], pos: &mut usize) -> Vec<AstNode> {
-                    if let Some((Token::Elif, _)) = tokens.get(*pos) {
-                        *pos += 1;
-                        let elif_cond = if let Some(c) = parse_expr(tokens, pos) { c } else { return vec![] };
-                        if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Colon) {
-                            *pos += 1;
-                        }
-                        while let Some((Token::Newline, _)) = tokens.get(*pos) {
-                            *pos += 1;
-                        }
-                        let elif_body = parse_block(tokens, pos);
-                        let elif_orelse = parse_elif_else(tokens, pos);
-                        return vec![AstNode::If {
-                            cond: Box::new(elif_cond),
-                            body: elif_body,
-                            orelse: elif_orelse,
-                        }];
-                    } else if let Some((Token::Else, _)) = tokens.get(*pos) {
-                        *pos += 1;
-                        if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Colon) {
-                            *pos += 1;
-                        }
-                        while let Some((Token::Newline, _)) = tokens.get(*pos) {
-                            *pos += 1;
-                        }
-                        return parse_block(tokens, pos);
-                    } else {
-                        return Vec::new();
-                    }
-                }
-                let orelse = parse_elif_else(tokens, pos);
+                let orelse = parse_elif_else(tokens, pos, class_names);
                 Some(AstNode::If {
                     cond: Box::new(cond),
                     body,
@@ -208,14 +288,14 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                 } else {
                     return None;
                 }
-                let iter = parse_expr(tokens, pos)?;
+                let iter = parse_expr(tokens, pos, class_names)?;
                 if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Colon) {
                     *pos += 1;
                 }
                 while let Some((Token::Newline, _)) = tokens.get(*pos) {
                     *pos += 1;
                 }
-                let body = parse_block(tokens, pos);
+                let body = parse_block(tokens, pos, class_names);
                 // 多变量 for 支持
                 if vars.len() == 1 {
                     Some(AstNode::For {
@@ -239,7 +319,7 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                 let value = if let Some((Token::Newline, _)) = tokens.get(*pos) {
                     None
                 } else {
-                    Some(Box::new(parse_expr(tokens, pos)?))
+                    Some(Box::new(parse_expr(tokens, pos, class_names)?))
                 };
                 Some(AstNode::Return(value))
             }
@@ -256,32 +336,67 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                 *pos += 1;
                 Some(AstNode::Pass)
             }
-            // 赋值
-            Some((Token::Identifier, name))
-                if tokens.get(*pos + 1).map(|t| &t.0) == Some(&Token::Equal) =>
-            {
-                let name = name.clone();
-                *pos += 2;
-                let value = parse_expr(tokens, pos)?;
-                Some(AstNode::Assign {
-                    name,
-                    value: Box::new(value),
-                })
+            // 赋值 (支持 obj.attr = value 和 name = value)
+            _ => {
+                // 先尝试解析表达式，然后检查是否是赋值
+                let start_pos = *pos;
+                if let Some(expr) = parse_expr(tokens, pos, class_names) {
+                    // 检查是否是赋值操作
+                    if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Equal) {
+                        *pos += 1;
+                        let value = parse_expr(tokens, pos, class_names)?;
+                        
+                        match expr {
+                            // 简单变量赋值
+                            AstNode::Identifier(name) => {
+                                Some(AstNode::Assign {
+                                    name,
+                                    value: Box::new(value),
+                                })
+                            }
+                            // 属性赋值
+                            AstNode::Attribute { value: object, attr } => {
+                                Some(AstNode::AttributeAssign {
+                                    object,
+                                    attr,
+                                    value: Box::new(value),
+                                })
+                            }
+                            // 其他情况，恢复原来的表达式
+                            _ => {
+                                *pos = start_pos;
+                                Some(expr)
+                            }
+                        }
+                    } else {
+                        // 不是赋值，就是普通表达式
+                        Some(expr)
+                    }
+                } else {
+                    None
+                }
             }
-            // 表达式语句
-            _ => parse_expr(tokens, pos),
         }
     }
 
     // 优先级递归下降表达式解析
-    fn parse_expr(tokens: &[(Token, String)], pos: &mut usize) -> Option<AstNode> {
-        parse_or(tokens, pos)
+    // ====== 递归表达式相关函数全部移到顶层，带class_names参数 =====
+    fn parse_expr(
+        tokens: &[(Token, String)],
+        pos: &mut usize,
+        class_names: &std::collections::HashSet<String>,
+    ) -> Option<AstNode> {
+        parse_or(tokens, pos, class_names)
     }
-    fn parse_or(tokens: &[(Token, String)], pos: &mut usize) -> Option<AstNode> {
-        let mut node = parse_and(tokens, pos)?;
+    fn parse_or(
+        tokens: &[(Token, String)],
+        pos: &mut usize,
+        class_names: &std::collections::HashSet<String>,
+    ) -> Option<AstNode> {
+        let mut node = parse_and(tokens, pos, class_names)?;
         while let Some((Token::Or, _)) = tokens.get(*pos) {
             *pos += 1;
-            let right = parse_and(tokens, pos)?;
+            let right = parse_and(tokens, pos, class_names)?;
             node = AstNode::BinaryOp {
                 left: Box::new(node),
                 op: "or".to_string(),
@@ -290,11 +405,15 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
         }
         Some(node)
     }
-    fn parse_and(tokens: &[(Token, String)], pos: &mut usize) -> Option<AstNode> {
-        let mut node = parse_cmp(tokens, pos)?;
+    fn parse_and(
+        tokens: &[(Token, String)],
+        pos: &mut usize,
+        class_names: &std::collections::HashSet<String>,
+    ) -> Option<AstNode> {
+        let mut node = parse_cmp(tokens, pos, class_names)?;
         while let Some((Token::And, _)) = tokens.get(*pos) {
             *pos += 1;
-            let right = parse_cmp(tokens, pos)?;
+            let right = parse_cmp(tokens, pos, class_names)?;
             node = AstNode::BinaryOp {
                 left: Box::new(node),
                 op: "and".to_string(),
@@ -303,8 +422,12 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
         }
         Some(node)
     }
-    fn parse_cmp(tokens: &[(Token, String)], pos: &mut usize) -> Option<AstNode> {
-        let mut node = parse_add(tokens, pos)?;
+    fn parse_cmp(
+        tokens: &[(Token, String)],
+        pos: &mut usize,
+        class_names: &std::collections::HashSet<String>,
+    ) -> Option<AstNode> {
+        let mut node = parse_add(tokens, pos, class_names)?;
         while let Some((tok, _)) = tokens.get(*pos) {
             let op = match tok {
                 Token::DoubleEqual => "==",
@@ -316,7 +439,7 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                 _ => break,
             };
             *pos += 1;
-            let right = parse_add(tokens, pos)?;
+            let right = parse_add(tokens, pos, class_names)?;
             node = AstNode::BinaryOp {
                 left: Box::new(node),
                 op: op.to_string(),
@@ -325,8 +448,12 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
         }
         Some(node)
     }
-    fn parse_add(tokens: &[(Token, String)], pos: &mut usize) -> Option<AstNode> {
-        let mut node = parse_mul(tokens, pos)?;
+    fn parse_add(
+        tokens: &[(Token, String)],
+        pos: &mut usize,
+        class_names: &std::collections::HashSet<String>,
+    ) -> Option<AstNode> {
+        let mut node = parse_mul(tokens, pos, class_names)?;
         while let Some((tok, _)) = tokens.get(*pos) {
             let op = match tok {
                 Token::Plus => "+",
@@ -334,7 +461,7 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                 _ => break,
             };
             *pos += 1;
-            let right = parse_mul(tokens, pos)?;
+            let right = parse_mul(tokens, pos, class_names)?;
             node = AstNode::BinaryOp {
                 left: Box::new(node),
                 op: op.to_string(),
@@ -343,8 +470,12 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
         }
         Some(node)
     }
-    fn parse_mul(tokens: &[(Token, String)], pos: &mut usize) -> Option<AstNode> {
-        let mut node = parse_unary(tokens, pos)?;
+    fn parse_mul(
+        tokens: &[(Token, String)],
+        pos: &mut usize,
+        class_names: &std::collections::HashSet<String>,
+    ) -> Option<AstNode> {
+        let mut node = parse_unary(tokens, pos, class_names)?;
         while let Some((tok, _)) = tokens.get(*pos) {
             let op = match tok {
                 Token::Star => "*",
@@ -355,7 +486,7 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                 _ => break,
             };
             *pos += 1;
-            let right = parse_unary(tokens, pos)?;
+            let right = parse_unary(tokens, pos, class_names)?;
             node = AstNode::BinaryOp {
                 left: Box::new(node),
                 op: op.to_string(),
@@ -364,22 +495,33 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
         }
         Some(node)
     }
-    fn parse_unary(tokens: &[(Token, String)], pos: &mut usize) -> Option<AstNode> {
+    fn parse_unary(
+        tokens: &[(Token, String)],
+        pos: &mut usize,
+        class_names: &std::collections::HashSet<String>,
+    ) -> Option<AstNode> {
         if let Some((Token::Not, _)) = tokens.get(*pos) {
             *pos += 1;
-            let expr = parse_unary(tokens, pos)?;
+            let expr = parse_unary(tokens, pos, class_names)?;
             Some(AstNode::UnaryOp {
                 op: "not".to_string(),
                 expr: Box::new(expr),
             })
         } else {
-            parse_atom(tokens, pos)
+            parse_atom(tokens, pos, class_names)
         }
     }
-    fn parse_atom(tokens: &[(Token, String)], pos: &mut usize) -> Option<AstNode> {
-        // 支持属性、索引、嵌套调用
-        fn parse_postfix(mut node: AstNode, tokens: &[(Token, String)], pos: &mut usize) -> AstNode {
-            // 属性访问：a.b
+    fn parse_atom(
+        tokens: &[(Token, String)],
+        pos: &mut usize,
+        class_names: &std::collections::HashSet<String>,
+    ) -> Option<AstNode> {
+        fn parse_postfix(
+            mut node: AstNode,
+            tokens: &[(Token, String)],
+            pos: &mut usize,
+            class_names: &std::collections::HashSet<String>,
+        ) -> AstNode {
             loop {
                 match tokens.get(*pos) {
                     Some((Token::Dot, _)) => {
@@ -394,10 +536,9 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                             break;
                         }
                     }
-                    // ...existing code for LBracket, LParen...
                     Some((Token::LBracket, _)) => {
                         *pos += 1;
-                        let index = match parse_expr(tokens, pos) {
+                        let index = match parse_expr(tokens, pos, class_names) {
                             Some(idx) => idx,
                             None => break,
                         };
@@ -413,7 +554,7 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                         *pos += 1;
                         let mut args = Vec::new();
                         while tokens.get(*pos).map(|t| &t.0) != Some(&Token::RParen) {
-                            match parse_expr(tokens, pos) {
+                            match parse_expr(tokens, pos, class_names) {
                                 Some(arg) => args.push(arg),
                                 None => break,
                             }
@@ -423,6 +564,15 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                         }
                         if tokens.get(*pos).map(|t| &t.0) == Some(&Token::RParen) {
                             *pos += 1;
+                        }
+                        if let AstNode::Identifier(ref name) = node {
+                            if class_names.contains(name) {
+                                node = AstNode::Instance {
+                                    class: name.clone(),
+                                    args,
+                                };
+                                continue;
+                            }
                         }
                         node = AstNode::Call {
                             func: Box::new(node),
@@ -438,12 +588,12 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
             Some((Token::BuiltInFunc(name), _)) => {
                 let node = AstNode::Identifier(name.clone());
                 *pos += 1;
-                Some(parse_postfix(node, tokens, pos))
+                Some(parse_postfix(node, tokens, pos, class_names))
             }
             Some((Token::Identifier, name)) => {
                 let node = AstNode::Identifier(name.clone());
                 *pos += 1;
-                Some(parse_postfix(node, tokens, pos))
+                Some(parse_postfix(node, tokens, pos, class_names))
             }
             Some((Token::Integer, n)) => {
                 *pos += 1;
@@ -469,12 +619,11 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                 *pos += 1;
                 Some(AstNode::None)
             }
-            // 列表
             Some((Token::LBracket, _)) => {
                 *pos += 1;
                 let mut items = Vec::new();
                 while tokens.get(*pos).map(|t| &t.0) != Some(&Token::RBracket) {
-                    match parse_expr(tokens, pos) {
+                    match parse_expr(tokens, pos, class_names) {
                         Some(item) => items.push(item),
                         None => break,
                     }
@@ -487,20 +636,19 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                 }
                 Some(AstNode::List(items))
             }
-            // 字典/集合
             Some((Token::LBrace, _)) => {
                 *pos += 1;
                 let mut pairs = Vec::new();
                 let mut is_dict = false;
                 while tokens.get(*pos).map(|t| &t.0) != Some(&Token::RBrace) {
-                    let key = match parse_expr(tokens, pos) {
+                    let key = match parse_expr(tokens, pos, class_names) {
                         Some(k) => k,
                         None => break,
                     };
                     if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Colon) {
                         is_dict = true;
                         *pos += 1;
-                        let value = match parse_expr(tokens, pos) {
+                        let value = match parse_expr(tokens, pos, class_names) {
                             Some(v) => v,
                             None => break,
                         };
@@ -521,19 +669,19 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                     Some(AstNode::Set(pairs.into_iter().map(|(k, _)| k).collect()))
                 }
             }
-            // 括号表达式/元组
             Some((Token::LParen, _)) => {
                 *pos += 1;
-                let expr = parse_expr(tokens, pos);
+                let expr = parse_expr(tokens, pos, class_names);
                 if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Comma) {
-                    // 逗号，说明是元组
                     let mut items = vec![];
-                    if let Some(e) = expr { items.push(e); }
+                    if let Some(e) = expr {
+                        items.push(e);
+                    }
                     while tokens.get(*pos).map(|t| &t.0) != Some(&Token::RParen) {
                         if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Comma) {
                             *pos += 1;
                         }
-                        match parse_expr(tokens, pos) {
+                        match parse_expr(tokens, pos, class_names) {
                             Some(item) => items.push(item),
                             None => break,
                         }
@@ -543,7 +691,6 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                     }
                     Some(AstNode::Tuple(items))
                 } else {
-                    // 单一表达式，且无逗号，保留括号
                     let inner = expr?;
                     if tokens.get(*pos).map(|t| &t.0) == Some(&Token::RParen) {
                         *pos += 1;
@@ -557,7 +704,7 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
 
     let mut stmts = Vec::new();
     while pos < tokens.len() {
-        if let Some(stmt) = parse_stmt(tokens, &mut pos) {
+        if let Some(stmt) = parse_stmt(tokens, &mut pos, &class_names) {
             stmts.push(stmt);
         } else {
             pos += 1;
@@ -570,49 +717,113 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
 pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
     let indent_str = |n| "    ".repeat(n);
     match node {
-        AstNode::Program(stmts) => stmts.iter().map(|s| ast_to_python(s, indent)).collect::<Vec<_>>().join("\n"),
+        AstNode::Instance { class, args } => {
+            let args_str = args
+                .iter()
+                .map(|a| ast_to_python(a, 0))
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!("{}{}({})", indent_str(indent), class, args_str)
+        }
+        AstNode::Class { name, bases, body } => {
+            let bases_str = if bases.is_empty() {
+                "".to_string()
+            } else {
+                format!("({})", bases.join(", "))
+            };
+            let body_str = if body.is_empty() {
+                format!("{}pass", indent_str(indent + 1))
+            } else {
+                body.iter()
+                    .map(|s| ast_to_python(s, indent + 1))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            };
+            format!(
+                "{}class {}{}:\n{}",
+                indent_str(indent),
+                name,
+                bases_str,
+                body_str
+            )
+        }
+        AstNode::Program(stmts) => stmts
+            .iter()
+            .map(|s| ast_to_python(s, indent))
+            .collect::<Vec<_>>()
+            .join("\n"),
         AstNode::Def { name, params, body } => {
             let params_str = params.join(", ");
             let body_str = if body.is_empty() {
                 format!("{}pass", indent_str(indent + 1))
             } else {
-                body.iter().map(|s| ast_to_python(s, indent + 1)).collect::<Vec<_>>().join("\n")
+                body.iter()
+                    .map(|s| ast_to_python(s, indent + 1))
+                    .collect::<Vec<_>>()
+                    .join("\n")
             };
-            format!("{}def {}({}):\n{}", indent_str(indent), name, params_str, body_str)
+            format!(
+                "{}def {}({}):\n{}",
+                indent_str(indent),
+                name,
+                params_str,
+                body_str
+            )
         }
         AstNode::If { cond, body, orelse } => {
             // 条件不加括号
             let cond_str = match &**cond {
                 AstNode::Paren(inner) => ast_to_python(inner, 0), // 去掉条件表达式外层括号
-                _ => ast_to_python(cond, 0)
+                _ => ast_to_python(cond, 0),
             };
             let body_str = if body.is_empty() {
                 format!("{}pass", indent_str(indent + 1))
             } else {
-                body.iter().map(|s| ast_to_python(s, indent + 1)).collect::<Vec<_>>().join("\n")
+                body.iter()
+                    .map(|s| ast_to_python(s, indent + 1))
+                    .collect::<Vec<_>>()
+                    .join("\n")
             };
             let mut result = format!("{}if {}:\n{}", indent_str(indent), cond_str, body_str);
             // 平级 elif/else 输出
             let mut orelse_ref = orelse;
             while !orelse_ref.is_empty() {
                 if orelse_ref.len() == 1 {
-                    if let AstNode::If { cond: elif_cond, body: elif_body, orelse: elif_orelse } = &orelse_ref[0] {
+                    if let AstNode::If {
+                        cond: elif_cond,
+                        body: elif_body,
+                        orelse: elif_orelse,
+                    } = &orelse_ref[0]
+                    {
                         let elif_cond_str = match &**elif_cond {
                             AstNode::Paren(inner) => ast_to_python(inner, 0),
-                            _ => ast_to_python(elif_cond, 0)
+                            _ => ast_to_python(elif_cond, 0),
                         };
                         let elif_body_str = if elif_body.is_empty() {
                             format!("{}pass", indent_str(indent + 1))
                         } else {
-                            elif_body.iter().map(|s| ast_to_python(s, indent + 1)).collect::<Vec<_>>().join("\n")
+                            elif_body
+                                .iter()
+                                .map(|s| ast_to_python(s, indent + 1))
+                                .collect::<Vec<_>>()
+                                .join("\n")
                         };
-                        result.push_str(&format!("\n{}elif {}:\n{}", indent_str(indent), elif_cond_str, elif_body_str));
+                        result.push_str(&format!(
+                            "\n{}elif {}:\n{}",
+                            indent_str(indent),
+                            elif_cond_str,
+                            elif_body_str
+                        ));
                         orelse_ref = elif_orelse;
                         continue;
                     }
                 }
                 // else 分支
-                let else_str = orelse_ref.iter().map(|s| ast_to_python(s, indent + 1)).collect::<Vec<_>>().join("\n");
+                let else_str = orelse_ref
+                    .iter()
+                    .map(|s| ast_to_python(s, indent + 1))
+                    .collect::<Vec<_>>()
+                    .join("\n");
                 result.push_str(&format!("\n{}else:\n{}", indent_str(indent), else_str));
                 break;
             }
@@ -623,9 +834,18 @@ pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
             let body_str = if body.is_empty() {
                 format!("{}pass", indent_str(indent + 1))
             } else {
-                body.iter().map(|s| ast_to_python(s, indent + 1)).collect::<Vec<_>>().join("\n")
+                body.iter()
+                    .map(|s| ast_to_python(s, indent + 1))
+                    .collect::<Vec<_>>()
+                    .join("\n")
             };
-            format!("{}for {} in {}:\n{}", indent_str(indent), var, iter_str, body_str)
+            format!(
+                "{}for {} in {}:\n{}",
+                indent_str(indent),
+                var,
+                iter_str,
+                body_str
+            )
         }
         AstNode::Return(val) => {
             if let Some(expr) = val {
@@ -638,7 +858,21 @@ pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
         AstNode::Continue => format!("{}continue", indent_str(indent)),
         AstNode::Pass => format!("{}pass", indent_str(indent)),
         AstNode::Assign { name, value } => {
-            format!("{}{} = {}", indent_str(indent), name, ast_to_python(value, 0))
+            format!(
+                "{}{} = {}",
+                indent_str(indent),
+                name,
+                ast_to_python(value, 0)
+            )
+        }
+        AstNode::AttributeAssign { object, attr, value } => {
+            format!(
+                "{}{}.{} = {}",
+                indent_str(indent),
+                ast_to_python(object, 0),
+                attr,
+                ast_to_python(value, 0)
+            )
         }
         AstNode::BinaryOp { left, op, right } => {
             if let AstNode::Call { func, args } = &**left {
@@ -649,7 +883,12 @@ pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
                     return format!("print({} % {})", str_expr, right_str);
                 }
             }
-            format!("{} {} {}", ast_to_python(left, 0), op, ast_to_python(right, 0))
+            format!(
+                "{} {} {}",
+                ast_to_python(left, 0),
+                op,
+                ast_to_python(right, 0)
+            )
         }
         AstNode::Paren(inner) => {
             format!("({})", ast_to_python(inner, 0))
@@ -661,14 +900,28 @@ pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
         AstNode::Integer(n) => n.to_string(),
         AstNode::Float(f) => f.to_string(),
         AstNode::String(s) => s.to_string().replace('“', "\"").replace('”', "\""),
-        AstNode::Bool(b) => if *b { "True".to_string() } else { "False".to_string() },
+        AstNode::Bool(b) => {
+            if *b {
+                "True".to_string()
+            } else {
+                "False".to_string()
+            }
+        }
         AstNode::None => "None".to_string(),
         AstNode::List(items) => {
-            let items_str = items.iter().map(|i| ast_to_python(i, 0)).collect::<Vec<_>>().join(", ");
+            let items_str = items
+                .iter()
+                .map(|i| ast_to_python(i, 0))
+                .collect::<Vec<_>>()
+                .join(", ");
             format!("[{}]", items_str)
         }
         AstNode::Tuple(items) => {
-            let items_str = items.iter().map(|i| ast_to_python(i, 0)).collect::<Vec<_>>().join(", ");
+            let items_str = items
+                .iter()
+                .map(|i| ast_to_python(i, 0))
+                .collect::<Vec<_>>()
+                .join(", ");
             if items.len() == 1 {
                 format!("({},)", items_str)
             } else {
@@ -676,11 +929,19 @@ pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
             }
         }
         AstNode::Set(items) => {
-            let items_str = items.iter().map(|i| ast_to_python(i, 0)).collect::<Vec<_>>().join(", ");
+            let items_str = items
+                .iter()
+                .map(|i| ast_to_python(i, 0))
+                .collect::<Vec<_>>()
+                .join(", ");
             format!("{{{}}}", items_str)
         }
         AstNode::Dict(pairs) => {
-            let pairs_str = pairs.iter().map(|(k, v)| format!("{}: {}", ast_to_python(k, 0), ast_to_python(v, 0))).collect::<Vec<_>>().join(", ");
+            let pairs_str = pairs
+                .iter()
+                .map(|(k, v)| format!("{}: {}", ast_to_python(k, 0), ast_to_python(v, 0)))
+                .collect::<Vec<_>>()
+                .join(", ");
             format!("{{{}}}", pairs_str)
         }
         AstNode::Call { func, args } => {
@@ -691,13 +952,22 @@ pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
                         if op == "%" {
                             let left_str = ast_to_python(left, 0);
                             let right_str = ast_to_python(right, 0);
-                            return format!("{}print({} % {})", indent_str(indent), left_str, right_str);
+                            return format!(
+                                "{}print({} % {})",
+                                indent_str(indent),
+                                left_str,
+                                right_str
+                            );
                         }
                     }
                 }
             }
             // 其它情况，普通函数调用
-            let args_str = args.iter().map(|a| ast_to_python(a, 0)).collect::<Vec<_>>().join(", ");
+            let args_str = args
+                .iter()
+                .map(|a| ast_to_python(a, 0))
+                .collect::<Vec<_>>()
+                .join(", ");
             format!("{}{}({})", indent_str(indent), func_name, args_str)
         }
         AstNode::Index { value, index } => {
@@ -724,13 +994,17 @@ pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
             }
         }
         AstNode::ImportFrom { module, names } => {
-            let names_str = names.iter().map(|(n, a)| {
-                if let Some(alias) = a {
-                    format!("{} as {}", n, alias)
-                } else {
-                    n.clone()
-                }
-            }).collect::<Vec<_>>().join(", ");
+            let names_str = names
+                .iter()
+                .map(|(n, a)| {
+                    if let Some(alias) = a {
+                        format!("{} as {}", n, alias)
+                    } else {
+                        n.clone()
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join(", ");
             format!("from {} import {}", module, names_str)
         }
     }

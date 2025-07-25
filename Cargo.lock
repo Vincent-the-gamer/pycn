@@ -221,7 +221,7 @@ checksum = "a4895175b425cb1f87721b59f0f286c2092bd4af812243672510e1ac53e2e0ad"
 
 [[package]]
 name = "parser"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "logos",
  "thiserror",
@@ -229,7 +229,7 @@ dependencies = [
 
 [[package]]
 name = "parser-wasm"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "parser",
  "wasm-bindgen",
@@ -252,7 +252,7 @@ dependencies = [
 
 [[package]]
 name = "pycn"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "clap",
  "parser",
@@ -262,7 +262,7 @@ dependencies = [
 
 [[package]]
 name = "pycn-dylib"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "pycn",
 ]

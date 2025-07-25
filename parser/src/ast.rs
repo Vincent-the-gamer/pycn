@@ -2,7 +2,10 @@
 pub enum AstNode {
     Program(Vec<AstNode>),
     Assign { name: String, value: Box<AstNode> },
+    AttributeAssign { object: Box<AstNode>, attr: String, value: Box<AstNode> },
     Call { func: Box<AstNode>, args: Vec<AstNode> },
+    /// 类实例化
+    Instance { class: String, args: Vec<AstNode> },
     If { cond: Box<AstNode>, body: Vec<AstNode>, orelse: Vec<AstNode> },
     For { var: String, iter: Box<AstNode>, body: Vec<AstNode> },
     Return(Option<Box<AstNode>>),
@@ -19,6 +22,7 @@ pub enum AstNode {
     Break,
     Continue,
     List(Vec<AstNode>),
+    Class { name: String, bases: Vec<String>, body: Vec<AstNode> },
     Dict(Vec<(AstNode, AstNode)>),
     Set(Vec<AstNode>),
     Tuple(Vec<AstNode>),

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-package.version = "1.0.1"
+package.version = "1.0.2"
 members = [ 
     "parser", 
     "parser-wasm",

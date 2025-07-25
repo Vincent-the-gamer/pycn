@@ -132,25 +132,36 @@ pub enum Token {
     #[regex(r#"f\"([^\"\\]|\\.)*\""#)]
     #[regex(r#"'([^'\\]|\\.)*'"#)]
     #[regex(r#""([^"\\]|\\.)*""#)]
-    #[regex(r#"“([^“”\\]|\\.)*”"#)]
+    #[regex(r#"“([^“”\\]|\\.)*”"#)] // 前引号在前
+    #[regex(r#"”([^“”\\]|\\.)*“"#)] // 后引号在前
+    #[regex(r#"“([^“”\\]|\\.)*“"#)] // 两个前引号
+    #[regex(r#"”([^“”\\]|\\.)*”"#)] // 两个后引号
     #[regex(r#"‘([^‘’\\]|\\.)*’"#)]
     String,
     // 运算符和分隔符
     #[token("**")]
+    #[token("取幂")]
     Pow,
     #[token("//")]
+    #[token("地板除")]
     FloorDiv,
     #[token("%")]
+    #[token("取余")]
     Mod,
     #[token("=")]
+    #[token("赋值为")]
     Equal,
     #[token("+")]
+    #[token("加")]
     Plus,
     #[token("-")]
+    #[token("减")]
     Minus,
     #[token("*")]
+    #[token("乘")]
     Star,
     #[token("/")]
+    #[token("除")]
     Slash,
     #[token(".")]
     Dot,
@@ -167,21 +178,27 @@ pub enum Token {
     #[token("，")]
     Comma,
     #[token("==")]
+    #[token("等于")]
     DoubleEqual,
     #[token("!=")]
     #[token("！=")]
+    #[token("不等于")]
     NotEqual,
     #[token("<")]
     #[token("《")]
+    #[token("小于")]
     Less,
     #[token("<=")]
     #[token("《=")]
+    #[token("小于等于")]
     LessEqual,
     #[token(">")]
     #[token("》")]
+    #[token("大于")]
     Greater,
     #[token(">=")]
     #[token("》=")]
+    #[token("大于等于")]
     GreaterEqual,
     #[token("[")]
     #[token("【")]
@@ -261,6 +278,7 @@ pub fn lex(input: &str) -> Vec<(Token, String)> {
                         tok = kw_token.clone();
                     } else {
                         let builtin = match slice.as_str() {
+                            // 普通内置函数
                             "打印" | "print" => Some("print"),
                             "范围" | "range" => Some("range"),
                             "整数" | "int" => Some("int"),
@@ -294,17 +312,58 @@ pub fn lex(input: &str) -> Vec<(Token, String)> {
                             "全局变量" | "globals" => Some("globals"),
                             "帮助" | "help" => Some("help"),
                             "编号" | "id" => Some("id"),
-                            "表达" | "repr" => Some("repr"),
                             "排序" | "sorted" => Some("sorted"),
-                            "反转" | "reversed" => Some("reversed"),
-                            "下一个" | "next" => Some("next"),
-                            "迭代器" | "iter" => Some("iter"),
                             "父类" | "super" => Some("super"),
                             "对象" | "object" => Some("object"),
                             "类方法" | "classmethod" => Some("classmethod"),
                             "静态方法" | "staticmethod" => Some("staticmethod"),
                             "属性" | "property" => Some("property"),
                             "异常" | "Exception" => Some("Exception"),
+                            // Python魔法方法中英文映射
+                            "魔法初始化" | "__init__" => Some("__init__"),
+                            "魔法新建" | "__new__" => Some("__new__"),
+                            "魔法销毁" | "__del__" => Some("__del__"),
+                            "魔法字符串表示" | "__str__" => Some("__str__"),
+                            "魔法表达式" | "__repr__" => Some("__repr__"),
+                            "魔法字节表示" | "__bytes__" => Some("__bytes__"),
+                            "魔法格式化" | "__format__" => Some("__format__"),
+                            "魔法等于" | "__eq__" => Some("__eq__"),
+                            "魔法不等于" | "__ne__" => Some("__ne__"),
+                            "魔法小于" | "__lt__" => Some("__lt__"),
+                            "魔法小于等于" | "__le__" => Some("__le__"),
+                            "魔法大于" | "__gt__" => Some("__gt__"),
+                            "魔法大于等于" | "__ge__" => Some("__ge__"),
+                            "魔法哈希" | "__hash__" => Some("__hash__"),
+                            "魔法布尔" | "__bool__" => Some("__bool__"),
+                            "魔法属性获取" | "__getattr__" => Some("__getattr__"),
+                            "魔法属性设置" | "__setattr__" => Some("__setattr__"),
+                            "魔法属性删除" | "__delattr__" => Some("__delattr__"),
+                            "魔法属性获取项" | "__getitem__" => Some("__getitem__"),
+                            "魔法属性设置项" | "__setitem__" => Some("__setitem__"),
+                            "魔法属性删除项" | "__delitem__" => Some("__delitem__"),
+                            "魔法长度" | "__len__" => Some("__len__"),
+                            "魔法可迭代" | "__iter__" => Some("__iter__"),
+                            "魔法迭代下一个" | "__next__" => Some("__next__"),
+                            "魔法反转" | "__reversed__" => Some("__reversed__"),
+                            "魔法包含" | "__contains__" => Some("__contains__"),
+                            "魔法加" | "__add__" => Some("__add__"),
+                            "魔法减" | "__sub__" => Some("__sub__"),
+                            "魔法乘" | "__mul__" => Some("__mul__"),
+                            "魔法除" | "__truediv__" => Some("__truediv__"),
+                            "魔法地板除" | "__floordiv__" => Some("__floordiv__"),
+                            "魔法取余" | "__mod__" => Some("__mod__"),
+                            "魔法取幂" | "__pow__" => Some("__pow__"),
+                            "魔法左移" | "__lshift__" => Some("__lshift__"),
+                            "魔法右移" | "__rshift__" => Some("__rshift__"),
+                            "魔法按位与" | "__and__" => Some("__and__"),
+                            "魔法按位或" | "__or__" => Some("__or__"),
+                            "魔法按位异或" | "__xor__" => Some("__xor__"),
+                            "魔法取反" | "__invert__" => Some("__invert__"),
+                            "魔法可调用" | "__call__" => Some("__call__"),
+                            "魔法进入" | "__enter__" => Some("__enter__"),
+                            "魔法退出" | "__exit__" => Some("__exit__"),
+                            "魔法拷贝" | "__copy__" => Some("__copy__"),
+                            "魔法深拷贝" | "__deepcopy__" => Some("__deepcopy__"),
                             _ => Option::None,
                         };
                         if let Some(eng) = builtin {
