@@ -16,6 +16,18 @@
 
 ## 二进制可执行文件
 
+
+### 快速安装
+
+如果你是`macOS`用户, 可以使用`homebrew`安装
+
+```shell
+brew tap vincent-the-gamer/homebrew-tap
+brew install pycn
+```
+
+
+### 手动安装
 1. 下载可执行文件： [release](https://github.com/Vincent-the-gamer/pycn/releases), `重命名`为pycn. (如果有后缀，不要修改), 你也可以复制下面的shell命令下载.
 ```shell
 # 例子

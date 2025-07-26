@@ -16,6 +16,15 @@ Remember to switch language to `pycn`
 
 ## Binary
 
+### Quick install
+If you are `macOS` user, using `homebrew`.
+
+```shell
+brew tap vincent-the-gamer/homebrew-tap
+brew install pycn
+```
+
+### Manually
 1. Download binary from [release](https://github.com/Vincent-the-gamer/pycn/releases), then `rename it` to pycn. (don't change suffix if there's a suffix), you can also copy the link and download in terminal.
 ```shell
 # example
