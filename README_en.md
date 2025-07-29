@@ -100,7 +100,7 @@ Download wasm package from [release](https://github.com/Vincent-the-gamer/pycn/r
 
 # Examples
 
-Keywords mapping from `pycn` to `Python`: `key => value`
+Keywords mapping from `Python` to `pycn`: `key => value`
 
 - `def` => 定义
 - `if` => 如果

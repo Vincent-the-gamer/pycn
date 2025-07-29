@@ -101,7 +101,7 @@ Wasm包仅仅实现`.pycn` 转换为Python代码的功能, 要运行代码，你
 
 # 案例
 
-关键词映射：从 `pycn` 到 `Python`: `key => value`
+关键词映射：从 `Python` 到 `pycn`: `key => value`
 
 - `def` => 定义
 - `if` => 如果
