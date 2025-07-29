@@ -100,65 +100,11 @@ Download wasm package from [release](https://github.com/Vincent-the-gamer/pycn/r
 
 # Examples
 
-Keywords mapping from `Python` to `pycn`: `key => value`
+You can read the mappings about keywords, built-in functions, operators and so on.
 
-- `def` => 定义
-- `if` => 如果
-- `else` => 否则
-- `elif` => 要不然
-- `for` => 迭代
-- `enumerate` => 索引迭代
-- `while` => 当
-- `in` => 在
-- `is` => 是
-- `not` => 不是
-- `and` => 和
-- `or` => 或
-- `None` => 空
-- `True` => 真
-- `False` => 假
-- `return` => 返回
-- `break` => 跳出
-- `continue` => 继续
-- `pass` => 过
-- `import` => 导入
-- `from` => 从
-- `as` => 作为
-- `class` => 类
-- `try` => 尝试
-- `except` => 意外情况
-- `finally` => 最终
-- `raise` => 举起
-- `assert` => 断言
-- `del` => 删除
-- `global` => 全局的
-- `nonlocal` => 非局部
-- `lambda` => 拉姆达
-- `yield` => 产出
-- `await` => 等待
-- `async` => 异步的
-- `with` => 带上
-- `match` => 匹配
-- `case` => 情况
-- `print` => 打印
-
-
-Operators in Chinese:
-- `+` => 加
-- `-` => 减
-- `*` => 乘
-- `/` => 除以
-- `//` => 地板除
-- `=` => 赋值为
-- `%` => 取余/取模
-- `**` => 取幂
-- `&` => 按位与
-- `|` => 按位或
-- `^` => 按位异或
-- `~` => 按位取反
-- `<<` => 左移
-- `>>` => 右移
-
+- [Keywords mapping](mapping/keywords.md)
+- [Built-in functions mapping](mapping/builtin-functions.md)
+- [Operators mapping](mapping/operators.md)
 
 > [!NOTE]
 > You can run these examples by `pycn run -f examples/xxx.pycn`
