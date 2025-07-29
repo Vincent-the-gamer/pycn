@@ -663,6 +663,32 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
             node
         }
         match tokens.get(*pos) {
+            Some((Token::Lambda, _)) => {
+                *pos += 1;
+                // 解析参数列表
+                let mut params = Vec::new();
+                while let Some((Token::Identifier, param)) = tokens.get(*pos) {
+                    params.push(param.clone());
+                    *pos += 1;
+                    if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Comma) {
+                        *pos += 1;
+                    } else {
+                        break;
+                    }
+                }
+                // 期望冒号
+                if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Colon) {
+                    *pos += 1;
+                } else {
+                    return None;
+                }
+                // 解析lambda体（表达式）
+                let body = parse_expr(tokens, pos, class_names)?;
+                Some(AstNode::Lambda {
+                    params,
+                    body: Box::new(body),
+                })
+            }
             Some((Token::BuiltInFunc(name), _)) => {
                 let node = AstNode::Identifier(name.clone());
                 *pos += 1;
@@ -1084,6 +1110,10 @@ pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
                 .collect::<Vec<_>>()
                 .join(", ");
             format!("from {} import {}", module, names_str)
+        }
+        AstNode::Lambda { params, body } => {
+            let params_str = params.join(", ");
+            format!("lambda {}: {}", params_str, ast_to_python(body, 0))
         }
     }
 }

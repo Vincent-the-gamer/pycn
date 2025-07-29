@@ -17,6 +17,7 @@ pub enum AstNode {
     Bool(bool),
     BinaryOp { left: Box<AstNode>, op: String, right: Box<AstNode> },
     UnaryOp { op: String, expr: Box<AstNode> },
+    Lambda { params: Vec<String>, body: Box<AstNode> },
     Paren(Box<AstNode>), // 新增：表达式括号节点
     None,
     Break,
