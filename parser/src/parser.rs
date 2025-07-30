@@ -336,10 +336,54 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                 *pos += 1;
                 Some(AstNode::Pass)
             }
-            // 赋值 (支持 obj.attr = value 和 name = value)
+            // 赋值 (支持 obj.attr = value 和 name = value 和多变量赋值)
             _ => {
                 // 先尝试解析表达式，然后检查是否是赋值
                 let start_pos = *pos;
+                
+                // 尝试解析多变量赋值（例如：甲，乙 赋值为 乙，甲）
+                let mut vars = Vec::new();
+                let mut temp_pos = *pos;
+                
+                // 收集逗号分隔的标识符
+                while let Some((Token::Identifier, name)) = tokens.get(temp_pos) {
+                    vars.push(name.clone());
+                    temp_pos += 1;
+                    
+                    if tokens.get(temp_pos).map(|t| &t.0) == Some(&Token::Comma) {
+                        temp_pos += 1;
+                        continue;
+                    } else {
+                        break;
+                    }
+                }
+                
+                // 如果找到多个变量且下一个token是赋值符号，则处理多变量赋值
+                if vars.len() > 1 && tokens.get(temp_pos).map(|t| &t.0) == Some(&Token::Equal) {
+                    *pos = temp_pos + 1; // 跳过等号
+                    
+                    // 解析右边的值列表
+                    let mut values = Vec::new();
+                    
+                    // 先解析第一个值
+                    if let Some(first_val) = parse_expr(tokens, pos, class_names) {
+                        values.push(first_val);
+                        
+                        // 解析后续的逗号分隔的值
+                        while tokens.get(*pos).map(|t| &t.0) == Some(&Token::Comma) {
+                            *pos += 1;
+                            if let Some(val) = parse_expr(tokens, pos, class_names) {
+                                values.push(val);
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                    
+                    return Some(AstNode::MultiAssign { names: vars, values });
+                }
+                
+                // 否则按原来的逻辑处理
                 if let Some(expr) = parse_expr(tokens, pos, class_names) {
                     // 检查是否是赋值操作
                     if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Equal) {
@@ -967,6 +1011,20 @@ pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
                 indent_str(indent),
                 name,
                 ast_to_python(value, 0)
+            )
+        }
+        AstNode::MultiAssign { names, values } => {
+            let names_str = names.join(", ");
+            let values_str = values
+                .iter()
+                .map(|v| ast_to_python(v, 0))
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!(
+                "{}{} = {}",
+                indent_str(indent),
+                names_str,
+                values_str
             )
         }
         AstNode::AttributeAssign { object, attr, value } => {

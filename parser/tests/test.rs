@@ -2,7 +2,7 @@ use parser::{chinese_to_digits::chinese_to_digits, parse_pycn};
 
 #[test]
 fn parser() {
-    let code = include_str!("../../examples/各种内置函数.pycn");
+    let code = include_str!("../../examples/函数.pycn");
     parse_pycn(code);
 }
 

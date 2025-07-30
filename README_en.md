@@ -117,6 +117,7 @@ You can read the mappings about keywords, built-in functions, operators and so o
 - [位运算.pycn](examples/位运算.pycn)
 - [中文数字.pycn](examples/中文数字.pycn)
 - [匿名函数.pycn](examples/匿名函数.pycn)
+- [交换变量.pycn](examples/交换变量.pycn)
 
 # Build
 

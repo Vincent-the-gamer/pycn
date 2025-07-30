@@ -118,6 +118,7 @@ Wasm包仅仅实现`.pycn` 转换为Python代码的功能, 要运行代码，你
 - [位运算.pycn](examples/位运算.pycn)
 - [中文数字.pycn](examples/中文数字.pycn)
 - [匿名函数.pycn](examples/匿名函数.pycn)
+- [交换变量.pycn](examples/交换变量.pycn)
 
 # 构建
 

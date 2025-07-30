@@ -2,6 +2,7 @@
 pub enum AstNode {
     Program(Vec<AstNode>),
     Assign { name: String, value: Box<AstNode> },
+    MultiAssign { names: Vec<String>, values: Vec<AstNode> },
     AttributeAssign { object: Box<AstNode>, attr: String, value: Box<AstNode> },
     Call { func: Box<AstNode>, args: Vec<AstNode> },
     /// 类实例化
