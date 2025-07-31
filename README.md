@@ -1,8 +1,11 @@
-# PyCN
+<div align="center">
+    <img src=".github/pycn-logo.png"/>
+    <h1>PyCN</h1>
+</div>
+
+<b>用中文写Python代码, 图一乐～(∠・ω< )⌒★</b>
 
 中文文档 | [English](./README_en.md)
-
-用中文写Python代码, 图一乐～(∠・ω< )⌒★
 
 # 游乐场
 
@@ -12,10 +15,13 @@
 
 ![playground](.github/playground.png)
 
+# 预览
+
+![preview](.github/preview.png)
+
 # 安装 
 
 ## 二进制可执行文件
-
 
 ### 快速安装
 
@@ -98,6 +104,10 @@ Wasm包仅仅实现`.pycn` 转换为Python代码的功能, 要运行代码，你
 如果是网页，可以使用[Pyodide](https://github.com/pyodide/pyodide)，这是一个Wasm Python运行时。
 
 下载Wasm包： [release](https://github.com/Vincent-the-gamer/pycn/releases).
+
+# 语法高亮
+
+目前，在VS Code中，可以使用`Pycn`插件来实现语法高亮
 
 # 案例
 

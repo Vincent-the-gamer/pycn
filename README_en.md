@@ -1,8 +1,11 @@
-# PyCN
+<div align="center">
+    <img src=".github/pycn-logo.png"/>
+    <h1>PyCN</h1>
+</div>
+
+<b>Write Python code in Chinese, just for fun ～(∠・ω< )⌒★</b>
 
 [中文文档](./README.md) | English
-
-Write Python code in Chinese, just for fun ～(∠・ω< )⌒★
 
 # Playground
 
@@ -11,6 +14,10 @@ Play **Pycn** at: https://mayu.vince-g.xyz/code-runner
 Remember to switch language to `pycn`
 
 ![playground](.github/playground.png)
+
+# Preview
+
+![preview](.github/preview.png)
 
 # Installation 
 
@@ -97,6 +104,10 @@ You will need a tool to run your code, like [Pyoxidizer](https://github.com/indy
 In website, you can run it with [Pyodide](https://github.com/pyodide/pyodide), it's a Wasm Python runtime.
 
 Download wasm package from [release](https://github.com/Vincent-the-gamer/pycn/releases).
+
+# Syntax highlighting
+
+For now, you can get syntax highlighted in VS Code by installing `pycn` extension.
 
 # Examples
 
