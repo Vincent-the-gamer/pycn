@@ -30,6 +30,7 @@ pub enum AstNode {
     Tuple(Vec<AstNode>),
     Range { start: Box<AstNode>, end: Box<AstNode>, step: Option<Box<AstNode>> },
     Index { value: Box<AstNode>, index: Box<AstNode> },
+    Slice { value: Box<AstNode>, start: Option<Box<AstNode>>, end: Option<Box<AstNode>>, step: Option<Box<AstNode>> },
     Attribute { value: Box<AstNode>, attr: String },
     Import { module: String, alias: Option<String> },
     ImportFrom { module: String, names: Vec<(String, Option<String>)> },

@@ -129,7 +129,7 @@ pub enum Token {
     #[regex(r"[0-9]+")]
     Integer,
     // 中文数字（包括：零一二三四五六七八九十百千万等）
-    #[regex(r"[点零一二三四五六七八九十百千万亿壹贰叁肆伍陆柒捌玖拾佰仟]+", priority = 3)]
+    #[regex(r"[负点零一二三四五六七八九十百千万亿壹贰叁肆伍陆柒捌玖拾佰仟]+", priority = 3)]
     ChineseNumber,
     // 字符串：支持format string格式化字符串，支持英文单双引号和中文单双引号
     #[regex(r#"f'([^'\\]|\\.)*'"#)]

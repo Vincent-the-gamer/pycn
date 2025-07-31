@@ -660,17 +660,60 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                     }
                     Some((Token::LBracket, _)) => {
                         *pos += 1;
-                        let index = match parse_expr(tokens, pos, class_names) {
-                            Some(idx) => idx,
-                            None => break,
-                        };
+                        // 检查是否为切片语法 (start:end 或 start:end:step)
+                        let mut start = None;
+                        let mut end = None;
+                        let mut step = None;
+                        let mut is_slice = false;
+
+                        // 解析第一个表达式（可能是start或者普通index）
+                        if tokens.get(*pos).map(|t| &t.0) != Some(&Token::Colon) {
+                            if let Some(expr) = parse_expr(tokens, pos, class_names) {
+                                start = Some(expr);
+                            }
+                        }
+
+                        // 检查是否有冒号
+                        if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Colon) {
+                            is_slice = true;
+                            *pos += 1; // 跳过冒号
+                            
+                            // 解析end部分（可选）
+                            if tokens.get(*pos).map(|t| &t.0) != Some(&Token::Colon) 
+                                && tokens.get(*pos).map(|t| &t.0) != Some(&Token::RBracket) {
+                                if let Some(expr) = parse_expr(tokens, pos, class_names) {
+                                    end = Some(expr);
+                                }
+                            }
+
+                            // 检查是否有第二个冒号（step）
+                            if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Colon) {
+                                *pos += 1; // 跳过第二个冒号
+                                if tokens.get(*pos).map(|t| &t.0) != Some(&Token::RBracket) {
+                                    if let Some(expr) = parse_expr(tokens, pos, class_names) {
+                                        step = Some(expr);
+                                    }
+                                }
+                            }
+                        }
+
                         if tokens.get(*pos).map(|t| &t.0) == Some(&Token::RBracket) {
                             *pos += 1;
                         }
-                        node = AstNode::Index {
-                            value: Box::new(node),
-                            index: Box::new(index),
-                        };
+
+                        if is_slice {
+                            node = AstNode::Slice {
+                                value: Box::new(node),
+                                start: start.map(Box::new),
+                                end: end.map(Box::new),
+                                step: step.map(Box::new),
+                            };
+                        } else if let Some(index) = start {
+                            node = AstNode::Index {
+                                value: Box::new(node),
+                                index: Box::new(index),
+                            };
+                        }
                     }
                     Some((Token::LParen, _)) => {
                         *pos += 1;
@@ -1134,6 +1177,17 @@ pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
         }
         AstNode::Index { value, index } => {
             format!("{}[{}]", ast_to_python(value, 0), ast_to_python(index, 0))
+        }
+        AstNode::Slice { value, start, end, step } => {
+            let start_str = start.as_ref().map(|s| ast_to_python(s, 0)).unwrap_or_default();
+            let end_str = end.as_ref().map(|e| ast_to_python(e, 0)).unwrap_or_default();
+            
+            if let Some(step_node) = step {
+                let step_str = ast_to_python(step_node, 0);
+                format!("{}[{}:{}:{}]", ast_to_python(value, 0), start_str, end_str, step_str)
+            } else {
+                format!("{}[{}:{}]", ast_to_python(value, 0), start_str, end_str)
+            }
         }
         AstNode::Range { start, end, step } => {
             let start_str = ast_to_python(start.as_ref(), 0);
