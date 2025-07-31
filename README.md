@@ -1,11 +1,13 @@
 <div align="center">
-    <img src=".github/pycn-logo.png"/>
+    <img src=".github/pycn-logo.png" style="height: 90px;"/>
     <h1>PyCN</h1>
+    <b>用中文写Python代码, 图一乐～(∠・ω< )⌒★</b>
+    <br/>
+    <div>中文文档 | <a href="./README_en.md" target="_blank">English</a></div>
 </div>
 
-<b>用中文写Python代码, 图一乐～(∠・ω< )⌒★</b>
+<br/>
 
-中文文档 | [English](./README_en.md)
 
 # 游乐场
 

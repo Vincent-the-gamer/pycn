@@ -1,11 +1,12 @@
 <div align="center">
-    <img src=".github/pycn-logo.png"/>
+    <img src=".github/pycn-logo.png" style="height: 90px;"/>
     <h1>PyCN</h1>
+    <b>Write Python code in Chinese, just for fun ～(∠・ω< )⌒★</b>
+    <br/>
+    <div><a href="./README.md" target="_blank">中文文档</a> | Engligh</div>
 </div>
 
-<b>Write Python code in Chinese, just for fun ～(∠・ω< )⌒★</b>
-
-[中文文档](./README.md) | English
+<br/>
 
 # Playground
 
