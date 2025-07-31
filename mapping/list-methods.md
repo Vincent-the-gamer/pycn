@@ -3,7 +3,7 @@
 - `list.append(element)` => 列表.添加（元素）
 - `list.insert(index, element)` => 列表.插入（索引，元素）
 - `list.remove(element)` => 列表.移除（元素）
-- `list.pop() / list.pop(index)` => 列表.移除（）/ 列表.移除（索引）
+- `list.pop() / list.pop(index)` => 列表.弹出（）/ 列表.弹出（索引）
 - `list.clear()` => 列表.清空（）
 - `list.copy()` => 列表.复制（）
 - `list.count` => 列表.计数（）
