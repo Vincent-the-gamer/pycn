@@ -134,6 +134,7 @@ Wasm包仅仅实现`.pycn` 转换为Python代码的功能, 要运行代码，你
 - [交换变量.pycn](examples/交换变量.pycn)
 - [切片.pycn](examples/切片.pycn)
 - [列表方法测试.pycn](examples/列表方法测试.pycn)
+- [字典.pycn](examples/字典.pycn)
 
 # 构建
 
@@ -145,6 +146,14 @@ cargo build -p pycn --release
 
 # pycn-dylib
 cargo build -p pycn-dylib --release
+
+# wasm-nodejs
+cd parser-wasm
+wasm-pack build --target nodejs --out-dir output
+
+# wasm-web
+cd parser-wasm
+wasm-pack build --target web --out-dir output
 ```
 
 ## 跨平台构建

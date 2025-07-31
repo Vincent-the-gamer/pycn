@@ -130,6 +130,7 @@ You can read the mappings about keywords, built-in functions, operators and so o
 - [中文数字.pycn](examples/中文数字.pycn)
 - [匿名函数.pycn](examples/匿名函数.pycn)
 - [交换变量.pycn](examples/交换变量.pycn)
+- [字典.pycn](examples/字典.pycn)
 
 # Build
 
@@ -141,6 +142,14 @@ cargo build -p pycn --release
 
 # pycn-dylib
 cargo build -p pycn-dylib --release
+
+# wasm-nodejs
+cd parser-wasm
+wasm-pack build --target nodejs --out-dir output
+
+# wasm-web
+cd parser-wasm
+wasm-pack build --target web --out-dir output
 ```
 
 ## Cross Platform
