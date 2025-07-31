@@ -84,11 +84,11 @@ load({
         如果 是否是质数（数字）：
             打印（数字）
 
-    布尔值1 赋值为 一 大于 二 和 一 小于 三
-    布尔值2 赋值为 一 大于 二 或 一 小于 三
+    布尔值一 赋值为 一 大于 二 和 一 小于 三
+    布尔值二 赋值为 一 大于 二 或 一 小于 三
     
-    打印（布尔值1）
-    打印（布尔值2）
+    打印（布尔值一）
+    打印（布尔值二）
     
 主函数（）
 `]
@@ -130,6 +130,8 @@ You can read the mappings about keywords, built-in functions, operators and so o
 - [中文数字.pycn](examples/中文数字.pycn)
 - [匿名函数.pycn](examples/匿名函数.pycn)
 - [交换变量.pycn](examples/交换变量.pycn)
+- [切片.pycn](examples/切片.pycn)
+- [列表方法测试.pycn](examples/列表方法测试.pycn)
 - [字典.pycn](examples/字典.pycn)
 
 # Build
