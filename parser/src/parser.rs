@@ -406,6 +406,14 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                                     value: Box::new(value),
                                 })
                             }
+                            // 索引赋值
+                            AstNode::Index { value: object, index } => {
+                                Some(AstNode::IndexAssign {
+                                    object,
+                                    index,
+                                    value: Box::new(value),
+                                })
+                            }
                             // 其他情况，恢复原来的表达式
                             _ => {
                                 *pos = start_pos;
@@ -648,14 +656,23 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                 match tokens.get(*pos) {
                     Some((Token::Dot, _)) => {
                         *pos += 1;
-                        if let Some((Token::Identifier, attr)) = tokens.get(*pos) {
-                            node = AstNode::Attribute {
-                                value: Box::new(node),
-                                attr: attr.clone(),
-                            };
-                            *pos += 1;
-                        } else {
-                            break;
+                        // 在属性访问中，接受标识符或内置函数名作为属性名
+                        match tokens.get(*pos) {
+                            Some((Token::Identifier, attr)) => {
+                                node = AstNode::Attribute {
+                                    value: Box::new(node),
+                                    attr: attr.clone(),
+                                };
+                                *pos += 1;
+                            }
+                            Some((Token::BuiltInFunc(func_name), _)) => {
+                                node = AstNode::Attribute {
+                                    value: Box::new(node),
+                                    attr: func_name.clone(),
+                                };
+                                *pos += 1;
+                            }
+                            _ => break,
                         }
                     }
                     Some((Token::LBracket, _)) => {
@@ -907,6 +924,25 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
 // AstNode 转 Python 源代码
 pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
     let indent_str = |n| "    ".repeat(n);
+    
+    // List方法的中文到英文映射
+    fn translate_list_method(method: &str) -> &str {
+        match method {
+            "添加" => "append",
+            "插入" => "insert", 
+            "移除" => "remove",
+            "弹出" => "pop",
+            "清空" => "clear",
+            "复制" => "copy",
+            "计数" => "count",
+            "扩展" => "extend",
+            "索引" => "index",
+            "反转" => "reverse",
+            "排序" | "sorted" => "sort",  // 在属性访问中，排序应该映射为sort方法
+            _ => method, // 如果没有映射，返回原方法名
+        }
+    }
+    
     match node {
         AstNode::Instance { class, args } => {
             let args_str = args
@@ -1079,6 +1115,15 @@ pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
                 ast_to_python(value, 0)
             )
         }
+        AstNode::IndexAssign { object, index, value } => {
+            format!(
+                "{}{}[{}] = {}",
+                indent_str(indent),
+                ast_to_python(object, 0),
+                ast_to_python(index, 0),
+                ast_to_python(value, 0)
+            )
+        }
         AstNode::BinaryOp { left, op, right } => {
             if let AstNode::Call { func, args } = &**left {
                 let func_name = ast_to_python(func, 0);
@@ -1200,7 +1245,8 @@ pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
             }
         }
         AstNode::Attribute { value, attr } => {
-            format!("{}.{}", ast_to_python(value, 0), attr)
+            let translated_attr = translate_list_method(attr);
+            format!("{}.{}", ast_to_python(value, 0), translated_attr)
         }
         AstNode::Import { module, alias } => {
             if let Some(a) = alias {

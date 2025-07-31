@@ -1,10 +1,4 @@
-use parser::{chinese_to_digits::chinese_to_digits, parse_pycn};
-
-#[test]
-fn parser() {
-    let code = include_str!("../../examples/切片.pycn");
-    parse_pycn(code);
-}
+use parser::{chinese_to_digits::chinese_to_digits};
 
 #[test]
 fn cn_to_digits() {

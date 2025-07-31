@@ -4,6 +4,7 @@ pub enum AstNode {
     Assign { name: String, value: Box<AstNode> },
     MultiAssign { names: Vec<String>, values: Vec<AstNode> },
     AttributeAssign { object: Box<AstNode>, attr: String, value: Box<AstNode> },
+    IndexAssign { object: Box<AstNode>, index: Box<AstNode>, value: Box<AstNode> },
     Call { func: Box<AstNode>, args: Vec<AstNode> },
     /// 类实例化
     Instance { class: String, args: Vec<AstNode> },

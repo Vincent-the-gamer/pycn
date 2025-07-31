@@ -9,6 +9,6 @@ pub fn parse_pycn(code: &str) -> String {
     let tokens = lex(code);
     let ast = parse(&tokens);
     let result = ast_to_python(&ast, 0);
-    println!("{}", result);
+    // println!("{}", result);
     result
 }

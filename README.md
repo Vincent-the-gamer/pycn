@@ -118,6 +118,7 @@ Wasm包仅仅实现`.pycn` 转换为Python代码的功能, 要运行代码，你
 - [关键词映射](mapping/keywords.md)
 - [内置函数映射](mapping/builtin-functions.md)
 - [运算符映射](mapping/operators.md)
+- [List（列表）身上的方法映射](mapping/list-methods.md)
 
 > [!NOTE]
 > 你可以使用命令： `pycn run -f examples/xxx.pycn` 来运行案例代码
@@ -131,6 +132,8 @@ Wasm包仅仅实现`.pycn` 转换为Python代码的功能, 要运行代码，你
 - [中文数字.pycn](examples/中文数字.pycn)
 - [匿名函数.pycn](examples/匿名函数.pycn)
 - [交换变量.pycn](examples/交换变量.pycn)
+- [切片.pycn](examples/切片.pycn)
+- [列表方法测试.pycn](examples/列表方法测试.pycn)
 
 # 构建
 
