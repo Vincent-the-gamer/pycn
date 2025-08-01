@@ -1,0 +1,34 @@
+# 基于 Windows x64 架构的镜像
+FROM --platform=windows/amd64 mcr.microsoft.com/windows/servercore:ltsc2022
+
+# 设置 PowerShell 作为默认 shell
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+# 安装 Chocolatey 包管理器
+RUN Set-ExecutionPolicy Bypass -Scope Process -Force; \
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; \
+    iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+# 刷新环境变量
+RUN refreshenv
+
+# 安装 Python3 和 Rust
+RUN choco install -y python3 --version=3.11.9; \
+    choco install -y rust-ms --version=1.79.0; \
+    choco install -y git --version=2.45.2; \
+    choco install -y visualstudio2022buildtools --version=17.10.4.0 --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+
+# 刷新环境变量并验证安装
+RUN refreshenv; \
+    python --version; \
+    rustc --version; \
+    cargo --version
+
+# 设置工作目录
+WORKDIR C:\\workspace
+
+# 设置环境变量确保 Rust 和 Python 在 PATH 中
+ENV PATH="C:\\Users\\ContainerAdministrator\\.cargo\\bin;C:\\Python311;C:\\Python311\\Scripts;${PATH}"
+
+# 验证最终安装
+RUN python --version; rustc --version; cargo --version
