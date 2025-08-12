@@ -1,6 +1,6 @@
 ---
 layout: doc
-title: "Page"
+title: "Download PyCN"
 lastUpdated: true
 ---
 
