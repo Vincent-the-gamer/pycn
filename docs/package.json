@@ -1,0 +1,36 @@
+{
+  "name": "vitepress-starter",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "♥️ Opinionated Vitepress Template ♥️",
+  "author": "",
+  "license": "MIT",
+  "keywords": [
+    "documentation"
+  ],
+  "scripts": {
+    "dev": "vitepress dev contents",
+    "build": "vitepress build contents",
+    "preview": "vitepress preview contents",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "dep": "taze major"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^5.2.1",
+    "@shikijs/vitepress-twoslash": "^3.9.2",
+    "@types/node": "^24.2.1",
+    "eslint": "^9.33.0",
+    "eslint-plugin-format": "^1.0.1",
+    "medium-zoom": "^1.1.0",
+    "taze": "^19.1.0",
+    "unocss": "66.4.1",
+    "vite": "^7.1.2",
+    "vitepress": "^2.0.0-alpha.10"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
