@@ -44,7 +44,7 @@ curl -LJO https://github.com/Vincent-the-gamer/pycn/releases/download/v1.0.0/pyc
 
 2. 下载后的二进制文件随便放入一个文件夹，将这个文件夹添加进你的环境变量 PATH 中。
 3. 使用 `pycn --help` 命令来测试环境变量是否生效.
-4. 使用 `pycn run --file xxx.pycn` 命令来运行`.pycn` 代码
+4. 使用 `pycn run xxx.pycn` 命令来运行`.pycn` 代码
 
 ## 动态链接库
 
@@ -121,7 +121,7 @@ Wasm包仅仅实现`.pycn` 转换为Python代码的功能, 要运行代码，你
 - [List（列表）身上的方法映射](mapping/list-methods.md)
 
 > [!NOTE]
-> 你可以使用命令： `pycn run -f examples/xxx.pycn` 来运行案例代码
+> 你可以使用命令： `pycn run examples/xxx.pycn` 来运行案例代码
 
 - [函数.pycn](examples/函数.pycn)
 - [索引迭代.pycn](examples/索引迭代.pycn)

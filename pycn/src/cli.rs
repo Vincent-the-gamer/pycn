@@ -15,7 +15,6 @@ struct Cli {
 enum SubCommands {
     #[command(name = "run", about = "Run code from .pycn file.")]
     Run { 
-        #[arg(short, long)]
         file: Option<String>
     }
 }
@@ -25,7 +24,7 @@ pub fn use_cli() {
 
     match cli.cmd {
         SubCommands::Run { file } => {
-            let has_main_pycn = fs::exists("./main.pycn").unwrap();
+            let has_main_pycn = fs::exists("./入口.pycn").unwrap();
             let has_main = fs::exists("./main.py").unwrap();
 
             if let Some(file) = file {   

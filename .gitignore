@@ -5,3 +5,5 @@
 **/output
 **/*.py
 __pycache__
+venv
+.venv

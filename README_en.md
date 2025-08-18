@@ -41,7 +41,7 @@ curl -LJO https://github.com/Vincent-the-gamer/pycn/releases/download/v1.0.0/pyc
 
 2. Put it anywhere, then add the folder to your PATH
 3. Test env variable by running `pycn --help`.
-4. Run pycn code by `pycn run --file xxx.pycn`
+4. Run pycn code by `pycn run xxx.pycn`
 
 ## Dylibs
 
@@ -119,7 +119,7 @@ You can read the mappings about keywords, built-in functions, operators and so o
 - [Operators mapping](mapping/operators.md)
 
 > [!NOTE]
-> You can run these examples by `pycn run -f examples/xxx.pycn`
+> You can run these examples by `pycn run examples/xxx.pycn`
 
 - [函数.pycn](examples/函数.pycn)
 - [索引迭代.pycn](examples/索引迭代.pycn)
