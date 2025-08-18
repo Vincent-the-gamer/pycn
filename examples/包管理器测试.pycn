@@ -1,7 +1,6 @@
 # 测试和Poetry虚拟环境联动
-# PYTHONPATH=.venv/lib/python{{version}}/site-packages cargo run -p pycn -- run ./包管理器测试.pycn
+# PYTHONPATH=.venv/lib/python<VERSION>/site-packages cargo run -p pycn -- run ./包管理器测试.pycn
 导入 numpy 作为 牛批
 
-# 设置dtype
 艾克斯 赋值为 牛批.arange(10,20,2) 
 打印（艾克斯）

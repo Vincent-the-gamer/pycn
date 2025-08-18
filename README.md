@@ -136,6 +136,20 @@ Wasm包仅仅实现`.pycn` 转换为Python代码的功能, 要运行代码，你
 - [列表方法测试.pycn](examples/列表方法测试.pycn)
 - [字典.pycn](examples/字典.pycn)
 
+## 和虚拟环境交互
+
+Pycn支持和Python虚拟环境交互，如`pip`, `poetry`等包管理器创建的虚拟环境，注意此时运行命令有所不同。
+
+```shell
+# poetry
+PYTHONPATH=.venv/lib/python<VERSION>/site-packages pycn run ./包管理器测试.pycn
+
+# pip
+PYTHONPATH=venv/lib/python<VERSION>/site-packages pycn run ./包管理器测试.pycn
+```
+
+- [包管理器测试.pycn](examples/包管理器测试.pycn)
+
 # 构建
 
 ## 本地构建

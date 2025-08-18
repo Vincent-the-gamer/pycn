@@ -134,6 +134,20 @@ You can read the mappings about keywords, built-in functions, operators and so o
 - [列表方法测试.pycn](examples/列表方法测试.pycn)
 - [字典.pycn](examples/字典.pycn)
 
+## Interact with Python virtualenvs
+
+Pycn is able to interact with virtualenvs created by `pip`, `poetry` and etc. Please notice that the run command is something different now.
+
+```shell
+# poetry
+PYTHONPATH=.venv/lib/python<VERSION>/site-packages pycn run ./包管理器测试.pycn
+
+# pip
+PYTHONPATH=venv/lib/python<VERSION>/site-packages pycn run ./包管理器测试.pycn
+```
+
+- [包管理器测试.pycn](examples/包管理器测试.pycn)
+
 # Build
 
 ## Locally
