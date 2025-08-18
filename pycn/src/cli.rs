@@ -1,5 +1,3 @@
-use std::fs;
-
 use clap::{ Parser, Subcommand };
 
 use crate::run_pycn_file;
@@ -24,20 +22,11 @@ pub fn use_cli() {
 
     match cli.cmd {
         SubCommands::Run { file } => {
-            let has_main_pycn = fs::exists("./入口.pycn").unwrap();
-            let has_main = fs::exists("./main.py").unwrap();
-
             if let Some(file) = file {   
                 run_pycn_file(&file);
                 return
-            } 
-            
-            if has_main_pycn {
-                run_pycn_file("./main.pycn");
-            } else if has_main {
-                run_pycn_file("./main.py");
             } else {
-                println!("No main.py or main.pycn found in this directory, if you want to choose a file, please use -f or --file.")
+                eprintln!("No file provided. Please specify a .pycn or .py file to run.");
             }
         },
     }
