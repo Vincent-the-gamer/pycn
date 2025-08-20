@@ -23,10 +23,14 @@ features:
     details: Use both half-width and full-width together in your code.
     icon:
       src: "/logo/character.svg"
-  - title: Local `.pycn` import.
-    details: Currently support importing local `.pycn` files.
+  - title: Local .pycn import.
+    details: Support importing local .pycn files.
     icon:
       src: "/logo/import.svg"
+  - title: Interact with pip, poetry and more virtualenvs.
+    details: Install third-party dependencies in virtualenvs, the use in PyCN.
+    icon:
+      src: "/logo/package.svg"
 
 ---
 

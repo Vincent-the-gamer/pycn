@@ -53,3 +53,4 @@ I've given some examples for you to know more about Pycn:
 - [切片.pycn](https://github.com/Vincent-the-gamer/pycn/blob/main/examples/切片.pycn)
 - [列表方法测试.pycn](https://github.com/Vincent-the-gamer/pycn/blob/main/examples/列表方法测试.pycn)
 - [字典.pycn](https://github.com/Vincent-the-gamer/pycn/blob/main/examples/字典.pycn)
+- [装饰器完整测试.pycn](https://github.com/Vincent-the-gamer/pycn/blob/main/examples/装饰器完整测试.pycn)

@@ -11,7 +11,7 @@ hero:
     alt: logo
   actions:
     - theme: brand
-      text: 获取Pycn
+      text: 开始使用
       link: /zh_hans/intro
 
 features:
@@ -23,10 +23,14 @@ features:
     details: 可以同时使用全角符号和半角符号。
     icon:
       src: "/logo/character.svg"
-  - title: 引入本地 `.pycn`
-    details: 目前支持引入本地`.pycn`文件。
+  - title: 引入本地 .pycn
+    details: 支持引入本地.pycn文件。
     icon:
       src: "/logo/import.svg"
+  - title: 和pip, poetry等虚拟环境交互
+    details: 在虚拟环境安装第三方依赖，即可在PyCN调用。
+    icon:
+      src: "/logo/package.svg"
 ---
 
 > [!IMPORTANT] 重要

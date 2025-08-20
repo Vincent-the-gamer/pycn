@@ -81,3 +81,9 @@ cd /home/pycn
 cargo build -p pycn --release
 cargo build -p pycn-dylib --release
 ```
+
+# License
+
+[MIT License](./LICENSE.md)
+
+Copyright (c) 2025-PRESENT Vincent-the-gamer <https://github.com/Vincent-the-gamer>
