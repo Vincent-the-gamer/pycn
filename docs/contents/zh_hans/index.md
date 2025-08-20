@@ -12,7 +12,7 @@ hero:
   actions:
     - theme: brand
       text: 获取Pycn
-      link: /zh_hans/download
+      link: /zh_hans/intro
 
 features:
   - title: 全中文编程
@@ -28,3 +28,6 @@ features:
     icon:
       src: "/logo/import.svg"
 ---
+
+> [!IMPORTANT] 重要
+> 该文档尚未完成！

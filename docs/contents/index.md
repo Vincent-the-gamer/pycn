@@ -11,8 +11,8 @@ hero:
     alt: logo
   actions:
     - theme: brand
-      text: Get Pycn
-      link: /download
+      text: Get Started
+      link: /intro
 
 features:
   - title: Programming in full Chinese
@@ -29,3 +29,6 @@ features:
       src: "/logo/import.svg"
 
 ---
+
+> [!IMPORTANT]
+> This document is not completed!

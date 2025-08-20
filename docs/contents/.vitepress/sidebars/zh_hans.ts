@@ -1,9 +1,10 @@
 export default [
   {
-    text: '内容',
+    text: '开始使用',
     collapsed: false,
     items: [
-      { text: '下载Pycn', link: '/zh_hans/download' },
+      { text: '入坑简介', link: '/zh_hans/intro' },
+      { text: '基本使用', link: '/zh_hans/basic-usage' },
     ],
   },
 ]

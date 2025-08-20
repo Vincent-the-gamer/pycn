@@ -1,10 +1,10 @@
 export default [
   {
-    text: 'Contents',
+    text: 'Get Started',
     collapsed: false,
     items: [
-      { text: 'Download Pycn', link: '/download' },
-      { text: 'Usage', link: '/usage' },
+      { text: 'Introduction', link: '/intro' },
+      { text: 'Basic Usage', link: '/basic-usage' },
     ],
   },
 ]

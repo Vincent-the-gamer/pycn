@@ -2901,7 +2901,7 @@ var Gt = {
   options: h2
 };
 
-// node_modules/.pnpm/@shikijs+vitepress-twoslash@3.9.2_typescript@5.7.3/node_modules/@shikijs/vitepress-twoslash/dist/client.mjs
+// node_modules/.pnpm/@shikijs+vitepress-twoslash@3.11.0_typescript@5.7.3/node_modules/@shikijs/vitepress-twoslash/dist/client.mjs
 var isMobile = typeof navigator !== "undefined" && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 var TwoslashFloatingVue = {
   install: (app, options = {}) => {

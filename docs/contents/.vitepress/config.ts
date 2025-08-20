@@ -1,10 +1,19 @@
+import fs from 'node:fs'
+import path from 'node:path'
+import MarkdownItShiki from '@shikijs/markdown-it'
 import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
+import { bundledLanguages } from 'shiki'
 import { defineConfig } from 'vitepress'
 import { enConfig } from './configs/en'
 import { zhHansConfig } from './configs/zh_hans'
 import { docsConfig } from './docs'
 import useBaseUrl from './hooks/useBaseUrl'
 import { ImagePlugin } from './plugins/markdown/image'
+
+const jsonPath = path.resolve(__dirname, './shiki/pycn.json')
+const pycnLang = JSON.parse(
+  fs.readFileSync(jsonPath, 'utf-8'),
+)
 
 const baseUrl = useBaseUrl()
 
@@ -60,8 +69,18 @@ export default defineConfig({
     codeTransformers: [
       transformerTwoslash(),
     ],
-    config: (md) => {
+    config: async (md) => {
       md.use(ImagePlugin)
+      md.use(await MarkdownItShiki({
+        themes: {
+          light: 'vitesse-light',
+          dark: 'vitesse-dark',
+        },
+        langs: [
+          ...Object.keys(bundledLanguages),
+          pycnLang,
+        ],
+      }))
     },
   },
   lastUpdated: true,
