@@ -58,6 +58,116 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
         pos: &mut usize,
         class_names: &std::collections::HashSet<String>,
     ) -> Option<AstNode> {
+        // 处理装饰器
+        if let Some((Token::At, _)) = tokens.get(*pos) {
+            let mut decorators = Vec::new();
+            
+            // 解析所有装饰器
+            while let Some((Token::At, _)) = tokens.get(*pos) {
+                *pos += 1;
+                let decorator = parse_expr(tokens, pos, class_names)?;
+                decorators.push(decorator);
+                
+                // 跳过换行
+                while let Some((Token::Newline, _)) = tokens.get(*pos) {
+                    *pos += 1;
+                }
+            }
+            
+            // 装饰器后面应该是函数或类定义
+            match tokens.get(*pos) {
+                Some((Token::Def, _)) => {
+                    *pos += 1;
+                    let name = tokens.get(*pos).and_then(|t| {
+                        match &t.0 {
+                            Token::Identifier => Some(t.1.clone()),
+                            Token::BuiltInFunc(eng_name) => Some(eng_name.clone()), // 使用英文映射名
+                            _ => None
+                        }
+                    })?;
+                    *pos += 1;
+                    if tokens.get(*pos).map(|t| &t.0) != Some(&Token::LParen) {
+                        return None;
+                    }
+                    *pos += 1;
+                    let mut params = Vec::new();
+                    while tokens.get(*pos).map(|t| &t.0) != Some(&Token::RParen) {
+                        match tokens.get(*pos) {
+                            Some((Token::Identifier, pname)) => {
+                                params.push(pname.clone());
+                                *pos += 1;
+                            }
+                            Some((Token::BuiltInFunc(func_name), _)) => {
+                                params.push(func_name.clone());
+                                *pos += 1;
+                            }
+                            _ => break,
+                        }
+                        if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Comma) {
+                            *pos += 1;
+                        }
+                    }
+                    if tokens.get(*pos).map(|t| &t.0) == Some(&Token::RParen) {
+                        *pos += 1;
+                    }
+                    if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Colon) {
+                        *pos += 1;
+                    }
+                    while let Some((Token::Newline, _)) = tokens.get(*pos) {
+                        *pos += 1;
+                    }
+                    let body = parse_block(tokens, pos, class_names);
+                    return Some(AstNode::DecoratedDef { decorators, name, params, body });
+                }
+                Some((Token::Class, _)) => {
+                    *pos += 1;
+                    let name = tokens.get(*pos).and_then(|t| {
+                        match &t.0 {
+                            Token::Identifier => Some(t.1.clone()),
+                            Token::BuiltInFunc(eng_name) => Some(eng_name.clone()),
+                            _ => None
+                        }
+                    })?;
+                    *pos += 1;
+                    
+                    // 解析继承的基类
+                    let mut bases = Vec::new();
+                    if tokens.get(*pos).map(|t| &t.0) == Some(&Token::LParen) {
+                        *pos += 1;
+                        while tokens.get(*pos).map(|t| &t.0) != Some(&Token::RParen) {
+                            match tokens.get(*pos) {
+                                Some((Token::Identifier, base_name)) => {
+                                    bases.push(base_name.clone());
+                                    *pos += 1;
+                                }
+                                Some((Token::BuiltInFunc(func_name), _)) => {
+                                    bases.push(func_name.clone());
+                                    *pos += 1;
+                                }
+                                _ => break,
+                            }
+                            if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Comma) {
+                                *pos += 1;
+                            }
+                        }
+                        if tokens.get(*pos).map(|t| &t.0) == Some(&Token::RParen) {
+                            *pos += 1;
+                        }
+                    }
+                    
+                    if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Colon) {
+                        *pos += 1;
+                    }
+                    while let Some((Token::Newline, _)) = tokens.get(*pos) {
+                        *pos += 1;
+                    }
+                    let body = parse_block(tokens, pos, class_names);
+                    return Some(AstNode::DecoratedClass { decorators, name, bases, body });
+                }
+                _ => return None,
+            }
+        }
+        
         // 导入 xxx [作为 yyy]
         if let Some((Token::Import, _)) = tokens.get(*pos) {
             *pos += 1;
@@ -210,7 +320,7 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                 let name = tokens.get(*pos).and_then(|t| {
                     match &t.0 {
                         Token::Identifier => Some(t.1.clone()),
-                        Token::BuiltInFunc(func_name) => Some(func_name.clone()),
+                        Token::BuiltInFunc(eng_name) => Some(eng_name.clone()), // 使用英文映射名
                         _ => None
                     }
                 })?;
@@ -665,10 +775,10 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                                 };
                                 *pos += 1;
                             }
-                            Some((Token::BuiltInFunc(func_name), _)) => {
+                            Some((Token::BuiltInFunc(_), text)) => {
                                 node = AstNode::Attribute {
                                     value: Box::new(node),
-                                    attr: func_name.clone(),
+                                    attr: text.clone(), // 使用原始文本而不是英文名
                                 };
                                 *pos += 1;
                             }
@@ -994,6 +1104,58 @@ pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
                 indent_str(indent),
                 name,
                 params_str,
+                body_str
+            )
+        }
+        AstNode::DecoratedDef { decorators, name, params, body } => {
+            let decorators_str = decorators
+                .iter()
+                .map(|d| format!("{}@{}", indent_str(indent), ast_to_python(d, 0)))
+                .collect::<Vec<_>>()
+                .join("\n");
+            let params_str = params.join(", ");
+            let body_str = if body.is_empty() {
+                format!("{}pass", indent_str(indent + 1))
+            } else {
+                body.iter()
+                    .map(|s| ast_to_python(s, indent + 1))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            };
+            format!(
+                "{}\n{}def {}({}):\n{}",
+                decorators_str,
+                indent_str(indent),
+                name,
+                params_str,
+                body_str
+            )
+        }
+        AstNode::DecoratedClass { decorators, name, bases, body } => {
+            let decorators_str = decorators
+                .iter()
+                .map(|d| format!("{}@{}", indent_str(indent), ast_to_python(d, 0)))
+                .collect::<Vec<_>>()
+                .join("\n");
+            let bases_str = if bases.is_empty() {
+                "".to_string()
+            } else {
+                format!("({})", bases.join(", "))
+            };
+            let body_str = if body.is_empty() {
+                format!("{}pass", indent_str(indent + 1))
+            } else {
+                body.iter()
+                    .map(|s| ast_to_python(s, indent + 1))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            };
+            format!(
+                "{}\n{}class {}{}:\n{}",
+                decorators_str,
+                indent_str(indent),
+                name,
+                bases_str,
                 body_str
             )
         }

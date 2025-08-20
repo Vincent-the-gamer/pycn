@@ -35,6 +35,22 @@ pub fn run_pycn_file(path: &str) {
     run_pycn_with_modules(&entry_mod, &module_map);
 }
 
+pub fn show_generated_python(path: &str) {
+    let code = match read_to_string(path) {
+        Ok(c) => c,
+        Err(err) => {
+            println!("File read error: {}", err);
+            return;
+        }
+    };
+    let tokens = lex(&code);
+    let ast = parse(&tokens);
+    let py_code = ast_to_python(&ast, 0);
+    println!("Generated Python code:");
+    println!("======================");
+    println!("{}", py_code);
+}
+
 
 /// 递归收集 pycn 依赖，构建 HashMap<模块名, py代码>
 fn collect_py_modules(code: &str, pycn_path: &Path, modules: &mut std::collections::HashMap<String, String>) {

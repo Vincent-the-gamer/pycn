@@ -233,6 +233,9 @@ pub enum Token {
     LBrace,
     #[token("}")]
     RBrace,
+    #[token("@")]
+    #[token("装饰")]
+    At,
     #[token("\n")]
     Newline,
     #[regex(r"#.*")]

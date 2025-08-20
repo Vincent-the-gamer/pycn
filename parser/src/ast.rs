@@ -16,6 +16,8 @@ pub enum AstNode {
     Float(f64),
     String(String),
     Def { name: String, params: Vec<String>, body: Vec<AstNode> },
+    DecoratedDef { decorators: Vec<AstNode>, name: String, params: Vec<String>, body: Vec<AstNode> },
+    DecoratedClass { decorators: Vec<AstNode>, name: String, bases: Vec<String>, body: Vec<AstNode> },
     Bool(bool),
     BinaryOp { left: Box<AstNode>, op: String, right: Box<AstNode> },
     UnaryOp { op: String, expr: Box<AstNode> },

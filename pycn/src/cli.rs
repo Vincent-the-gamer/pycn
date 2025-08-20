@@ -1,6 +1,6 @@
 use clap::{ Parser, Subcommand };
 
-use crate::run_pycn_file;
+use crate::{run_pycn_file, show_generated_python};
 
 #[derive(Parser)]
 #[command(name = "pycn", version, author, about, long_about = None)]
@@ -13,7 +13,9 @@ struct Cli {
 enum SubCommands {
     #[command(name = "run", about = "Run code from .pycn file.")]
     Run { 
-        file: Option<String>
+        file: Option<String>,
+        #[arg(long, help = "Show generated Python code")]
+        show_python: bool
     }
 }
 
@@ -21,9 +23,13 @@ pub fn use_cli() {
     let cli = Cli::parse();
 
     match cli.cmd {
-        SubCommands::Run { file } => {
+        SubCommands::Run { file, show_python } => {
             if let Some(file) = file {   
-                run_pycn_file(&file);
+                if show_python {
+                    show_generated_python(&file);
+                } else {
+                    run_pycn_file(&file);
+                }
                 return
             } else {
                 eprintln!("No file provided. Please specify a .pycn or .py file to run.");
