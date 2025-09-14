@@ -8,6 +8,10 @@ pub enum AstNode {
     Call { func: Box<AstNode>, args: Vec<AstNode> },
     /// 类实例化
     Instance { class: String, args: Vec<AstNode> },
+    /// 参数展开 *args
+    StarredArg(Box<AstNode>),
+    /// 关键字参数展开 **kwargs
+    DoubleStarredArg(Box<AstNode>),
     If { cond: Box<AstNode>, body: Vec<AstNode>, orelse: Vec<AstNode> },
     For { var: String, iter: Box<AstNode>, body: Vec<AstNode> },
     Return(Option<Box<AstNode>>),
@@ -15,13 +19,13 @@ pub enum AstNode {
     Integer(i64),
     Float(f64),
     String(String),
-    Def { name: String, params: Vec<String>, body: Vec<AstNode> },
-    DecoratedDef { decorators: Vec<AstNode>, name: String, params: Vec<String>, body: Vec<AstNode> },
+    Def { name: String, params: Vec<Parameter>, body: Vec<AstNode> },
+    DecoratedDef { decorators: Vec<AstNode>, name: String, params: Vec<Parameter>, body: Vec<AstNode> },
     DecoratedClass { decorators: Vec<AstNode>, name: String, bases: Vec<String>, body: Vec<AstNode> },
     Bool(bool),
     BinaryOp { left: Box<AstNode>, op: String, right: Box<AstNode> },
     UnaryOp { op: String, expr: Box<AstNode> },
-    Lambda { params: Vec<String>, body: Box<AstNode> },
+    Lambda { params: Vec<Parameter>, body: Box<AstNode> },
     Paren(Box<AstNode>),
     None,
     Break,
@@ -38,4 +42,11 @@ pub enum AstNode {
     Import { module: String, alias: Option<String> },
     ImportFrom { module: String, names: Vec<(String, Option<String>)> },
     Pass,
+}
+
+#[derive(Debug)]
+pub enum Parameter {
+    Normal(String),
+    Args(String),     // *参数 -> *args
+    Kwargs(String),   // **键值对参数 -> **kwargs
 }

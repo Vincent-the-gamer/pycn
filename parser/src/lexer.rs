@@ -390,6 +390,7 @@ pub fn lex(input: &str) -> Vec<(Token, String)> {
                             "魔法退出" | "__exit__" => Some("__exit__"),
                             "魔法拷贝" | "__copy__" => Some("__copy__"),
                             "魔法深拷贝" | "__deepcopy__" => Some("__deepcopy__"),
+                            "魔法名称" | "__name__" => Some("__name__"),
                             _ => Option::None,
                         };
                         if let Some(eng) = builtin {

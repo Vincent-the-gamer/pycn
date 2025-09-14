@@ -1,4 +1,4 @@
-use crate::{ast::AstNode, lexer::Token};
+use crate::{ast::{AstNode, Parameter}, lexer::Token};
 
 // 简单递归下降parser
 pub fn parse(tokens: &[(Token, String)]) -> AstNode {
@@ -93,12 +93,48 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                     let mut params = Vec::new();
                     while tokens.get(*pos).map(|t| &t.0) != Some(&Token::RParen) {
                         match tokens.get(*pos) {
+                            Some((Token::Star, _)) => {
+                                *pos += 1;
+                                match tokens.get(*pos) {
+                                    Some((Token::Identifier, pname)) => {
+                                        if pname == "参数" {
+                                            params.push(Parameter::Args("args".to_string()));
+                                        } else {
+                                            params.push(Parameter::Args(pname.clone()));
+                                        }
+                                        *pos += 1;
+                                    }
+                                    Some((Token::BuiltInFunc(func_name), _)) => {
+                                        params.push(Parameter::Args(func_name.clone()));
+                                        *pos += 1;
+                                    }
+                                    _ => break,
+                                }
+                            }
+                            Some((Token::Pow, _)) => {
+                                *pos += 1;
+                                match tokens.get(*pos) {
+                                    Some((Token::Identifier, pname)) => {
+                                        if pname == "键值对参数" {
+                                            params.push(Parameter::Kwargs("kwargs".to_string()));
+                                        } else {
+                                            params.push(Parameter::Kwargs(pname.clone()));
+                                        }
+                                        *pos += 1;
+                                    }
+                                    Some((Token::BuiltInFunc(func_name), _)) => {
+                                        params.push(Parameter::Kwargs(func_name.clone()));
+                                        *pos += 1;
+                                    }
+                                    _ => break,
+                                }
+                            }
                             Some((Token::Identifier, pname)) => {
-                                params.push(pname.clone());
+                                params.push(Parameter::Normal(pname.clone()));
                                 *pos += 1;
                             }
                             Some((Token::BuiltInFunc(func_name), _)) => {
-                                params.push(func_name.clone());
+                                params.push(Parameter::Normal(func_name.clone()));
                                 *pos += 1;
                             }
                             _ => break,
@@ -332,13 +368,49 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                 let mut params = Vec::new();
                 while tokens.get(*pos).map(|t| &t.0) != Some(&Token::RParen) {
                     match tokens.get(*pos) {
+                        Some((Token::Star, _)) => {
+                            *pos += 1;
+                            match tokens.get(*pos) {
+                                Some((Token::Identifier, pname)) => {
+                                    if pname == "参数" {
+                                        params.push(Parameter::Args("args".to_string()));
+                                    } else {
+                                        params.push(Parameter::Args(pname.clone()));
+                                    }
+                                    *pos += 1;
+                                }
+                                Some((Token::BuiltInFunc(func_name), _)) => {
+                                    params.push(Parameter::Args(func_name.clone()));
+                                    *pos += 1;
+                                }
+                                _ => break,
+                            }
+                        }
+                        Some((Token::Pow, _)) => {
+                            *pos += 1;
+                            match tokens.get(*pos) {
+                                Some((Token::Identifier, pname)) => {
+                                    if pname == "键值对参数" {
+                                        params.push(Parameter::Kwargs("kwargs".to_string()));
+                                    } else {
+                                        params.push(Parameter::Kwargs(pname.clone()));
+                                    }
+                                    *pos += 1;
+                                }
+                                Some((Token::BuiltInFunc(func_name), _)) => {
+                                    params.push(Parameter::Kwargs(func_name.clone()));
+                                    *pos += 1;
+                                }
+                                _ => break,
+                            }
+                        }
                         Some((Token::Identifier, pname)) => {
-                            params.push(pname.clone());
+                            params.push(Parameter::Normal(pname.clone()));
                             *pos += 1;
                         }
                         Some((Token::BuiltInFunc(func_name), _)) => {
                             // 在函数参数上下文中，内置函数名应该被当作普通参数名
-                            params.push(func_name.clone());
+                            params.push(Parameter::Normal(func_name.clone()));
                             *pos += 1;
                         }
                         _ => break,
@@ -846,9 +918,30 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                         *pos += 1;
                         let mut args = Vec::new();
                         while tokens.get(*pos).map(|t| &t.0) != Some(&Token::RParen) {
-                            match parse_expr(tokens, pos, class_names) {
-                                Some(arg) => args.push(arg),
-                                None => break,
+                            // 检查是否是 ** 参数展开
+                            if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Pow) {
+                                *pos += 1; // 跳过 **
+                                if let Some(arg) = parse_expr(tokens, pos, class_names) {
+                                    args.push(AstNode::DoubleStarredArg(Box::new(arg)));
+                                } else {
+                                    break;
+                                }
+                            }
+                            // 检查是否是 * 参数展开  
+                            else if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Star) {
+                                *pos += 1; // 跳过 *
+                                if let Some(arg) = parse_expr(tokens, pos, class_names) {
+                                    args.push(AstNode::StarredArg(Box::new(arg)));
+                                } else {
+                                    break;
+                                }
+                            }
+                            // 普通参数
+                            else {
+                                match parse_expr(tokens, pos, class_names) {
+                                    Some(arg) => args.push(arg),
+                                    None => break,
+                                }
                             }
                             if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Comma) {
                                 *pos += 1;
@@ -882,7 +975,7 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
                 // 解析参数列表
                 let mut params = Vec::new();
                 while let Some((Token::Identifier, param)) = tokens.get(*pos) {
-                    params.push(param.clone());
+                    params.push(Parameter::Normal(param.clone()));
                     *pos += 1;
                     if tokens.get(*pos).map(|t| &t.0) == Some(&Token::Comma) {
                         *pos += 1;
@@ -1035,7 +1128,16 @@ pub fn parse(tokens: &[(Token, String)]) -> AstNode {
 pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
     let indent_str = |n| "    ".repeat(n);
     
-    // List方法的中文到英文映射
+    // 将Parameter转换为字符串的辅助函数
+    fn parameter_to_string(param: &Parameter) -> String {
+        match param {
+            Parameter::Normal(name) => name.clone(),
+            Parameter::Args(name) => format!("*{}", name),
+            Parameter::Kwargs(name) => format!("**{}", name),
+        }
+    }
+    
+    // List方法和魔法属性的中文到英文映射
     fn translate_list_method(method: &str) -> &str {
         match method {
             "添加" => "append",
@@ -1049,6 +1151,7 @@ pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
             "索引" => "index",
             "反转" => "reverse",
             "排序" | "sorted" => "sort",  // 在属性访问中，排序应该映射为sort方法
+            "魔法名称" => "__name__",  // 添加魔法名称映射
             _ => method, // 如果没有映射，返回原方法名
         }
     }
@@ -1090,7 +1193,7 @@ pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
             .collect::<Vec<_>>()
             .join("\n"),
         AstNode::Def { name, params, body } => {
-            let params_str = params.join(", ");
+            let params_str = params.iter().map(parameter_to_string).collect::<Vec<_>>().join(", ");
             let body_str = if body.is_empty() {
                 format!("{}pass", indent_str(indent + 1))
             } else {
@@ -1113,7 +1216,7 @@ pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
                 .map(|d| format!("{}@{}", indent_str(indent), ast_to_python(d, 0)))
                 .collect::<Vec<_>>()
                 .join("\n");
-            let params_str = params.join(", ");
+            let params_str = params.iter().map(parameter_to_string).collect::<Vec<_>>().join(", ");
             let body_str = if body.is_empty() {
                 format!("{}pass", indent_str(indent + 1))
             } else {
@@ -1432,8 +1535,28 @@ pub fn ast_to_python(node: &AstNode, indent: usize) -> String {
             format!("from {} import {}", module, names_str)
         }
         AstNode::Lambda { params, body } => {
-            let params_str = params.join(", ");
+            let params_str = params.iter().map(parameter_to_string).collect::<Vec<_>>().join(", ");
             format!("lambda {}: {}", params_str, ast_to_python(body, 0))
+        }
+        AstNode::StarredArg(arg) => {
+            let arg_str = ast_to_python(arg, 0);
+            // 将中文参数名转换为标准的英文名
+            let standard_name = if arg_str == "参数" {
+                "args"
+            } else {
+                &arg_str
+            };
+            format!("*{}", standard_name)
+        }
+        AstNode::DoubleStarredArg(arg) => {
+            let arg_str = ast_to_python(arg, 0);
+            // 将中文参数名转换为标准的英文名
+            let standard_name = if arg_str == "键值对参数" {
+                "kwargs"
+            } else {
+                &arg_str
+            };
+            format!("**{}", standard_name)
         }
     }
 }
