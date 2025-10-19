@@ -8,7 +8,6 @@
 
 <br/>
 
-
 # 游乐场
 
 快速体验**Pycn**：https://mayu.vince-g.xyz/code-runner
@@ -27,7 +26,10 @@
 
 # 构建
 
-## 本地构建
+> [!IMPORTANT]
+> Pycn静态编译依赖于特定Python版本，所以你需要在一个拥有相同版本的环境才能正常运行这个构建。
+>
+> 举个例子：如果你使用Python 3.12.x版本编译你的Pycn(Cargo会调用你洗提供默认Python版本来编译)，那么你需要一个安装了Python3.12.x的环境来运行这个构建。
 
 ```shell
 # pycn
@@ -43,44 +45,6 @@ wasm-pack build --target nodejs --out-dir output
 # wasm-web
 cd parser-wasm
 wasm-pack build --target web --out-dir output
-```
-
-## 跨平台构建
-
-使用 `Docker` 镜像.
-
-### Linux arm64
-```shell
-docker pull vincentthegamer/rust-python-ubuntu:latest
-
-# 进入镜像bash终端
-docker run -it --rm \
-           -v $(pwd):/home/pycn \
-           vincentthegamer/rust-python-ubuntu bash
-
-# 切换路径至你挂载的项目路径
-cd /home/pycn
-
-# 构建项目
-cargo build -p pycn --release
-cargo build -p pycn-dylib --release
-```
-
-### Linux amd64(x64)
-```shell
-docker pull vincentthegamer/rust-python-ubuntu-amd64:latest
-
-# 进入镜像bash终端
-docker run -it --rm \
-           -v $(pwd):/home/pycn \
-           vincentthegamer/rust-python-ubuntu-amd64 bash
-
-# 切换路径至你挂载的项目路径
-cd /home/pycn
-
-# 构建项目
-cargo build -p pycn --release
-cargo build -p pycn-dylib --release
 ```
 
 # 开源证书

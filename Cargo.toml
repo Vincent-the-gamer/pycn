@@ -1,7 +1,8 @@
 [workspace]
 resolver = "3"
-package.version = "1.0.4"
-members = [ 
+package.version = "1.0.5"
+members = [
+    "http-server", 
     "parser", 
     "parser-wasm",
     "pycn", 

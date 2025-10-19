@@ -26,7 +26,11 @@ See PyCN docs at: https://pycn.vince-g.xyz/
 
 # Build
 
-## Locally
+> [!IMPORTANT]
+> Pycn static build is depending on a specific Python version, 
+> so you need as same version as where you built your own pycn.
+>
+> e.g. If you build your pycn using Python 3.12.x(Cargo will use your default Python version), you'll need a Python 3.12.x installed environment to run this build.
 
 ```shell
 # pycn
@@ -42,44 +46,6 @@ wasm-pack build --target nodejs --out-dir output
 # wasm-web
 cd parser-wasm
 wasm-pack build --target web --out-dir output
-```
-
-## Cross Platform
-
-Use `Docker` image.
-
-### Linux arm64
-```shell
-docker pull vincentthegamer/rust-python-ubuntu:latest
-
-# Enter image bash
-docker run -it --rm \
-           -v $(pwd):/home/pycn \
-           vincentthegamer/rust-python-ubuntu bash
-
-# Change directory to your volume map.
-cd /home/pycn
-
-# Build project
-cargo build -p pycn --release
-cargo build -p pycn-dylib --release
-```
-
-### Linux amd64(x64)
-```shell
-docker pull vincentthegamer/rust-python-ubuntu-amd64:latest
-
-# Enter image bash
-docker run -it --rm \
-           -v $(pwd):/home/pycn \
-           vincentthegamer/rust-python-ubuntu-amd64 bash
-
-# Change directory to your volume map.
-cd /home/pycn
-
-# Build project
-cargo build -p pycn --release
-cargo build -p pycn-dylib --release
 ```
 
 # License

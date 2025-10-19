@@ -1,0 +1,11 @@
+[package]
+name = "http-server"
+edition = "2024"
+version.workspace = true
+
+[dependencies]
+axum = "0.8.6"
+tokio = { version = "1.48.0", features = ["full"] }
+parser = { path = "../parser" }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
