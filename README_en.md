@@ -30,7 +30,7 @@ See PyCN docs at: https://pycn.vince-g.xyz/
 > Pycn static build is depending on a specific Python version, 
 > so you need as same version as where you built your own pycn.
 >
-> e.g. If you build your pycn using Python 3.12.x(Cargo will use your default Python version), you'll need a Python 3.12.x installed environment to run this build.
+> e.g. If you build your pycn using Python 3.12.x(Cargo will use your system default Python version), you'll need a Python 3.12.x installed environment to run this build.
 
 ```shell
 # pycn

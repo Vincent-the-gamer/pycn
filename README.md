@@ -29,7 +29,7 @@
 > [!IMPORTANT]
 > Pycn静态编译依赖于特定Python版本，所以你需要在一个拥有相同版本的环境才能正常运行这个构建。
 >
-> 举个例子：如果你使用Python 3.12.x版本编译你的Pycn(Cargo会调用你洗提供默认Python版本来编译)，那么你需要一个安装了Python3.12.x的环境来运行这个构建。
+> 举个例子：如果你使用Python 3.12.x版本编译你的Pycn(Cargo会调用你系统中默认Python版本来编译)，那么你需要一个安装了Python3.12.x的环境来运行这个构建。
 
 ```shell
 # pycn
