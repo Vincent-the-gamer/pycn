@@ -38,13 +38,11 @@ cargo build -p pycn --release
 # pycn-dylib
 cargo build -p pycn-dylib --release
 
-# wasm-nodejs
+# Node.js/Web WASM
 cd parser-wasm
-wasm-pack build --target nodejs --out-dir output
-
-# wasm-web
-cd parser-wasm
-wasm-pack build --target web --out-dir output
+wasm-pack build --out-dir output # ES Module (默认参数：--target bundler)
+wasm-pack build --target nodejs --out-dir output # CommonJS
+wasm-pack build --target web --out-dir output # Web
 
 # HTTP Server
 cargo build -p http-server --release
