@@ -34,17 +34,31 @@ def is_prime(num):
 
 没错！PyCN和Python的代码风格完全一致，然而如你所见，和我上面说的一样，代码都是中文的！
 
-## 安装PyCN解释器
+## 构建并使用Pycn
 
-想要运行你自己的PyCN代码，我推荐你下载我编译好的PyCN解释器：
+你需要自己构建可执行二进制文件，WASM包，动态链接库或者http服务端，因为Pycn依赖于特定Python版本运行。
 
-- [GitHub Release](https://github.com/Vincent-the-gamer/pycn/releases)
+你将同时需要Rust和Python开发环境来构建。
 
-如果你使用`macOS`, 可以从`HomeBrew`安装:
 
 ```shell
-brew tap vincent-the-gamer/homebrew-tap
-brew install pycn
+# 可执行二进制文件
+cargo build -p pycn --release
+
+# 动态连结库
+cargo build -p pycn-dylib --release
+
+# Node.js/Web WASM包
+# wasm-nodejs
+cd parser-wasm
+wasm-pack build --target nodejs --out-dir output
+
+# wasm-web
+cd parser-wasm
+wasm-pack build --target web --out-dir output
+
+# HTTP服务端
+cargo build -p http-server --release
 ```
 
 ## 在线游玩

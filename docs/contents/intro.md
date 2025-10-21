@@ -34,17 +34,31 @@ def is_prime(num):
 
 That's right! PyCN has exactly the same coding style as Python, but as you can see, the PyCN code is in Chinese like I said before.
 
-## Install PyCN interpreter
+## Build and use Pycn
 
-To run your own PyCN code, I recommend you to downlaod the compiled PyCN interpreter:
+You have to build PyCN executable binary, WASM pack or http server by yourselves, because
+PyCN requires specific Python version to run.
 
-- [GitHub Release](https://github.com/Vincent-the-gamer/pycn/releases)
-
-if you are using `macOS`, you can get pycn from `HomeBrew`:
+You'll need both Rust and Python environments to build this project.
 
 ```shell
-brew tap vincent-the-gamer/homebrew-tap
-brew install pycn
+# Executable binary
+cargo build -p pycn --release
+
+# Dynamic link library
+cargo build -p pycn-dylib --release
+
+# Node.js/Web WASM
+# wasm-nodejs
+cd parser-wasm
+wasm-pack build --target nodejs --out-dir output
+
+# wasm-web
+cd parser-wasm
+wasm-pack build --target web --out-dir output
+
+# HTTP Server
+cargo build -p http-server --release
 ```
 
 ## Online playground

@@ -45,6 +45,9 @@ wasm-pack build --target nodejs --out-dir output
 # wasm-web
 cd parser-wasm
 wasm-pack build --target web --out-dir output
+
+# HTTP Server
+cargo build -p http-server --release
 ```
 
 # 开源证书

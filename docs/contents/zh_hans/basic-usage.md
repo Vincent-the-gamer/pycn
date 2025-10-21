@@ -6,6 +6,12 @@ lastUpdated: true
 
 # 基本使用方法
 
+## 如何运行代码
+
+你可以用多种方式运行：可执行二进制文件，Node.js/Web WASM包，动态链接库以及HTTP API.
+
+如何构建这些文件： [看这一部分](./intro.md#构建并使用pycn)
+
 ## 编写你的第一个PyCN程序
 
 我们还是从一个「Hello, world!」程序开始 ~~传统艺能了~~。
@@ -54,3 +60,4 @@ PYTHONPATH=venv/lib/python<VERSION>/site-packages pycn run ./包管理器测试.
 - [列表方法测试.pycn](https://github.com/Vincent-the-gamer/pycn/blob/main/examples/列表方法测试.pycn)
 - [字典.pycn](https://github.com/Vincent-the-gamer/pycn/blob/main/examples/字典.pycn)
 - [装饰器完整测试.pycn](https://github.com/Vincent-the-gamer/pycn/blob/main/examples/装饰器完整测试.pycn)
+

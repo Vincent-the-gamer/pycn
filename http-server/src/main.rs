@@ -4,11 +4,9 @@ use serde_json::{Value, json};
 
 #[tokio::main]
 async fn main() {
-    // build our application with a single route
     let app = Router::new()
         .route("/", post(to_pycn));
 
-    // run our app with hyper
     let host = "0.0.0.0";
     let port = 2828;
     let listener = tokio::net::TcpListener::bind(format!("{}:{}", host, port))

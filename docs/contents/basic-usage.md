@@ -6,6 +6,12 @@ lastUpdated: true
 
 # Basic Usage
 
+## How to run
+
+You can run PyCN code using executable binary file, Node.js/Web WASM pack, dynamic link library or through http API.
+
+How to build: [See this section](./intro.md#build-and-use-pycn)
+
 ## Write your first PyCN program
 
 Let's get started with 「Hello, world!」program.
