@@ -29,7 +29,6 @@ pycn/
 │   ├── setup-dev.sh      # 开发环境一键配置
 │   └── build-release.sh  # 发布构建与打包
 ├── build/           # 构建缓存（PBS Python、pyo3 配置）
-├── docker/          # Docker 构建文件
 ├── python-stdlib/   # Python 标准库副本（由 setup-dev.sh 生成）
 └── examples/        # 示例代码
 ```
@@ -51,12 +50,6 @@ pycn/
 ```shell
 ./pycn run examples/打印.pycn
 ```
-
-## 在线体验
-
-不想安装？试试在线 WASM 版本：https://mayu.vince-g.xyz/code-runner
-
-切换语言为 `pycn` 即可游玩。
 
 # 构建（面向开发者）
 
