@@ -8,9 +8,9 @@ lastUpdated: true
 
 ## 如何运行代码
 
-你可以用多种方式运行：可执行二进制文件，Node.js/Web WASM包，动态链接库以及HTTP API.
+你可以使用预编译的二进制文件运行 PyCN 代码，或通过在线 WASM 游乐场体验。
 
-如何构建这些文件： [看这一部分](./intro.md#构建并使用pycn)
+如何安装：[看这一部分](./intro.md#安装-pycn)
 
 ## 编写你的第一个PyCN程序
 

@@ -34,37 +34,83 @@ def is_prime(num):
 
 That's right! PyCN has exactly the same coding style as Python, but as you can see, the PyCN code is in Chinese like I said before.
 
-## Build and use Pycn
+## Install PyCN
 
-You have to build PyCN executable binary, WASM pack or http server by yourselves, because
-PyCN requires specific Python version to run.
+Pre-built binaries are available on [GitHub Releases](https://github.com/Vincent-the-gamer/pycn/releases). Download the archive for your platform, extract it, and you're ready to go.
 
-You'll need both Rust and Python environments to build this project.
+Each release package includes the `pycn` binary and the Python standard library — no system Python or Rust toolchain required.
+
+### Supported Platforms
+
+| Platform | Architectures |
+|----------|--------------|
+| Linux    | x64, arm64  |
+| macOS    | x64, arm64  |
+| Windows  | x64, arm64  |
+
+After downloading and extracting, you can run PyCN directly:
 
 ```shell
-# Executable binary
+./pycn run your_file.pycn
+```
+
+## Build from source (for contributors)
+
+### Prerequisites
+
+- [Rust](https://rustup.rs/) toolchain
+- Network connection (pre-built Python is downloaded on first setup)
+
+### Development Build (Recommended)
+
+Run the setup script once, then `cargo build` / `cargo run` works out of the box:
+
+```shell
+# One-click dev environment setup (downloads standalone Python, generates config, copies stdlib)
+bash scripts/setup-dev.sh
+
+# Build pycn
 cargo build -p pycn --release
 
-# Dynamic link library
+# Run an example
+cargo run -p pycn --release -- run examples/打印.pycn
+```
+
+What `setup-dev.sh` does:
+
+1. Downloads a pre-built standalone Python from [python-build-standalone](https://github.com/astral-sh/python-build-standalone) into `build/pbs-python/`
+2. Generates `build/pyo3-config.txt` (pyo3 linking configuration)
+3. Copies the Python standard library to `python-stdlib/` (loaded at runtime)
+4. Writes `.cargo/config.toml` (auto-sets `PYO3_CONFIG_FILE` and `PYCN_STATIC_PYTHON` env vars)
+
+> [!NOTE]
+> - To use the system Python instead, delete `.cargo/config.toml` and build with `cargo build --no-default-features`
+> - `cargo clean` will not remove `python-stdlib/` (it's at the project root, not inside `target/`)
+
+### Other Crates
+
+```shell
+# C dynamic library
 cargo build -p pycn-dylib --release
 
-# Node.js/Web WASM
+# Node.js / Web WASM
 cd parser-wasm
-wasm-pack build --out-dir output # ES Module (--target bundler by default)
-wasm-pack build --target nodejs --out-dir output # CommonJS
-wasm-pack build --target web --out-dir output # Web
+wasm-pack build --out-dir output            # ES Module (--target bundler by default)
+wasm-pack build --target nodejs --out-dir output  # CommonJS
+wasm-pack build --target web --out-dir output     # Web
 
 # HTTP Server
 cargo build -p http-server --release
 ```
 
-## Online playground
+### Release Build (Standalone Package)
 
-Besides, if you just want to play PyCN for a while, I put the wasm pack to my website:
+```shell
+bash scripts/build-release.sh
+```
 
-[https://mayu.vince-g.xyz/code-runner](https://mayu.vince-g.xyz/code-runner)
+This script automatically downloads PBS Python, compiles pycn, and packages the binary together with the Python standard library into `target/release/pycn-standalone/`, producing a standalone distribution that does not depend on a system Python installation.
 
-Switch language to `pycn` and you are ready.
 
 ## Syntax Highlighting
 

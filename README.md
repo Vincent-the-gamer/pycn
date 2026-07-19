@@ -34,7 +34,31 @@ pycn/
 └── examples/        # 示例代码
 ```
 
-# 构建
+# 安装
+
+从 [GitHub Releases](https://github.com/Vincent-the-gamer/pycn/releases) 下载对应平台的预编译包，解压即可使用，无需安装 Python 或 Rust。
+
+### 支持平台
+
+| 平台    | 架构        |
+|---------|------------|
+| Linux   | x64, arm64 |
+| macOS   | x64, arm64 |
+| Windows | x64, arm64 |
+
+下载解压后直接运行：
+
+```shell
+./pycn run examples/打印.pycn
+```
+
+## 在线体验
+
+不想安装？试试在线 WASM 版本：https://mayu.vince-g.xyz/code-runner
+
+切换语言为 `pycn` 即可游玩。
+
+# 构建（面向开发者）
 
 ## 前置要求
 

@@ -34,7 +34,31 @@ pycn/
 └── examples/        # Example code
 ```
 
-# Build
+# Install
+
+Download the pre-built package for your platform from [GitHub Releases](https://github.com/Vincent-the-gamer/pycn/releases), extract it, and you're ready to go — no Python or Rust installation required.
+
+### Supported Platforms
+
+| Platform | Architectures |
+|----------|--------------|
+| Linux    | x64, arm64  |
+| macOS    | x64, arm64  |
+| Windows  | x64, arm64  |
+
+After extracting, run PyCN directly:
+
+```shell
+./pycn run examples/打印.pycn
+```
+
+## Try Online
+
+Don't want to install anything? Try the online WASM version: https://mayu.vince-g.xyz/code-runner
+
+Switch language to `pycn` and start playing.
+
+# Build (for contributors)
 
 ## Prerequisites
 

@@ -34,37 +34,82 @@ def is_prime(num):
 
 没错！PyCN和Python的代码风格完全一致，然而如你所见，和我上面说的一样，代码都是中文的！
 
-## 构建并使用Pycn
+## 安装 PyCN
 
-你需要自己构建可执行二进制文件，WASM包，动态链接库或者http服务端，因为Pycn依赖于特定Python版本运行。
+预编译的二进制文件已发布在 [GitHub Releases](https://github.com/Vincent-the-gamer/pycn/releases)。下载对应平台的压缩包，解压即可使用。
 
-你将同时需要Rust和Python开发环境来构建。
+每个发布包已包含 `pycn` 二进制文件和 Python 标准库——无需安装系统 Python 或 Rust 工具链。
 
+### 支持平台
+
+| 平台   | 架构        |
+|--------|------------|
+| Linux  | x64, arm64 |
+| macOS  | x64, arm64 |
+| Windows| x64, arm64 |
+
+下载解压后，直接运行：
 
 ```shell
-# 可执行二进制文件
+./pycn run 你的文件.pycn
+```
+
+## 从源码构建（面向贡献者）
+
+### 前置要求
+
+- [Rust](https://rustup.rs/) 工具链
+- 网络连接（首次构建需下载预编译 Python）
+
+### 开发构建（推荐）
+
+只需运行一次配置脚本，之后 `cargo build` / `cargo run` 开箱即用：
+
+```shell
+# 一键配置开发环境（下载独立 Python、生成配置、复制标准库）
+bash scripts/setup-dev.sh
+
+# 编译 pycn
 cargo build -p pycn --release
 
-# 动态连结库
+# 运行示例
+cargo run -p pycn --release -- run examples/打印.pycn
+```
+
+`setup-dev.sh` 做了什么：
+
+1. 下载 [python-build-standalone](https://github.com/astral-sh/python-build-standalone) 预编译的独立 Python 到 `build/pbs-python/`
+2. 生成 `build/pyo3-config.txt`（pyo3 链接配置）
+3. 复制 Python 标准库到 `python-stdlib/`（运行时加载）
+4. 写入 `.cargo/config.toml`（自动设置 `PYO3_CONFIG_FILE` 和 `PYCN_STATIC_PYTHON` 环境变量）
+
+> [!NOTE]
+> - 若需恢复使用系统 Python，删除 `.cargo/config.toml` 后使用 `cargo build --no-default-features` 构建
+> - `cargo clean` 不会删除 `python-stdlib/`（在项目根目录而非 `target/` 中）
+
+### 其他 crate 构建
+
+```shell
+# C 动态库
 cargo build -p pycn-dylib --release
 
-# Node.js/Web WASM
+# Node.js / Web WASM
 cd parser-wasm
-wasm-pack build --out-dir output # ES Module (默认参数：--target bundler)
-wasm-pack build --target nodejs --out-dir output # CommonJS
-wasm-pack build --target web --out-dir output # Web
+wasm-pack build --out-dir output            # ES Module（默认 --target bundler）
+wasm-pack build --target nodejs --out-dir output  # CommonJS
+wasm-pack build --target web --out-dir output     # Web
 
-# HTTP服务端
+# HTTP Server
 cargo build -p http-server --release
 ```
 
-## 在线游玩
+### 发布构建（打包独立运行时）
 
-如果你只是想浅尝辄止，我把WebAssemly包部署在了我的网站
+```shell
+bash scripts/build-release.sh
+```
 
-[https://mayu.vince-g.xyz/code-runner](https://mayu.vince-g.xyz/code-runner)
-
-切换语言为`pycn`即可游玩。
+该脚本会自动下载 PBS Python、编译 pycn、并将二进制与 Python 标准库打包到 `target/release/pycn-standalone/`，生成一个不依赖系统 Python 的独立分发包。
 
 ## 语法高亮
 
