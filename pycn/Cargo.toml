@@ -4,9 +4,15 @@ version.workspace = true
 description = "Write Python in Chinese."
 edition = "2024"
 
+[features]
+default = ["static-python"]
+# 启用静态链接 Python，打包独立运行时（默认开启）
+# 若需使用系统 Python，运行: cargo build --no-default-features
+static-python = []
+
 [dependencies]
 clap = { version = "4.5.40", features = ["derive"] }
-pyo3 = { version = "0.25.1", features = ["auto-initialize"] }
+pyo3 = { version = "0.25.1" }
 parser = { path = "../parser" }
 
 [build-dependencies]

@@ -1,0 +1,480 @@
+name: Release Build
+
+on:
+  push:
+    branches:
+      - release
+  workflow_dispatch:
+    inputs:
+      prerelease:
+        description: "标记为 prerelease"
+        type: boolean
+        default: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  PBS_RELEASE: "20260718"
+  PYTHON_VERSION: "3.12.13"
+
+jobs:
+  # ============================================================
+  # 从 Cargo.toml 提取版本号
+  # ============================================================
+  extract-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Extract version from Cargo.toml
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(grep '^package.version' Cargo.toml | head -1 | sed 's/.*= *"\(.*\)"/\1/')
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Extracted version: ${VERSION}"
+
+  # ============================================================
+  # 全平台构建矩阵
+  # ============================================================
+  build:
+    needs: extract-version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # ---- Linux ----
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            platform: linux
+            arch: x64
+            python-target: x86_64-unknown-linux-gnu
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            platform: linux
+            arch: arm64
+            python-target: aarch64-unknown-linux-gnu
+          # ---- macOS ----
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            platform: macos
+            arch: x64
+            python-target: x86_64-apple-darwin
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            platform: macos
+            arch: arm64
+            python-target: aarch64-apple-darwin
+          # ---- Windows ----
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            platform: windows
+            arch: x64
+            python-target: x86_64-pc-windows-msvc
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+            platform: windows
+            arch: arm64
+            python-target: aarch64-pc-windows-msvc
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      # ============================================================
+      # Step 1: 检出代码
+      # ============================================================
+      - uses: actions/checkout@v6
+
+      # ============================================================
+      # Step 2: 安装 Rust 工具链
+      # ============================================================
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      # ============================================================
+      # Step 3: 缓存 Rust 构建产物
+      # ============================================================
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.target }}-cargo-
+
+      # ============================================================
+      # Step 4: (Linux) 安装编译依赖
+      # ============================================================
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config
+
+      # ============================================================
+      # Step 5: 缓存 / 下载预编译的静态 Python
+      #   python-build-standalone (astral-sh) 提供预编译的
+      #   install_only 归档，包含静态库和头文件
+      #
+      #   注意: cache 步骤必须在 download 之前，
+      #   cache hit 时 restore 文件，miss 时 post-job 自动 save
+      # ============================================================
+      - name: Cache static Python
+        id: cache-python
+        uses: actions/cache@v4
+        with:
+          path: /tmp/pbs-python
+          key: pbs-${{ matrix.python-target }}-${{ env.PYTHON_VERSION }}-${{ env.PBS_RELEASE }}
+
+      - name: Download python-build-standalone
+        if: steps.cache-python.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PBS_URL="https://github.com/astral-sh/python-build-standalone/releases/download/${PBS_RELEASE}"
+          ARCHIVE="cpython-${PYTHON_VERSION}+${PBS_RELEASE}-${{ matrix.python-target }}-install_only.tar.gz"
+
+          echo "Downloading: ${PBS_URL}/${ARCHIVE}"
+          mkdir -p /tmp/pbs-python
+          curl -fsSL --retry 3 --retry-delay 5 "${PBS_URL}/${ARCHIVE}" -o /tmp/pbs.tar.gz
+
+          echo "Extracting..."
+          tar -xzf /tmp/pbs.tar.gz -C /tmp/pbs-python
+          rm -f /tmp/pbs.tar.gz
+
+          echo ""
+          echo "=== PBS archive structure ==="
+          find /tmp/pbs-python -maxdepth 3 -type d | sort
+
+      # ============================================================
+      # Step 6: 解析 Python Home 目录
+      #   定位 include/、lib/、stdlib/ 的位置
+      # ============================================================
+      - name: Resolve Python home directory
+        id: python-home
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # 查找 Python.h 来确定 Python 安装根目录
+          INCLUDE_FILE=$(find /tmp/pbs-python -name "Python.h" -type f 2>/dev/null | head -1)
+
+          if [ -z "$INCLUDE_FILE" ]; then
+            echo "::error::Python.h not found in /tmp/pbs-python"
+            echo "Directory contents:"
+            find /tmp/pbs-python -type f | head -40
+            exit 1
+          fi
+
+          # Python.h 在 include/python3.12/Python.h
+          # 往上两级得到 Python 安装根目录
+          INCLUDE_DIR=$(dirname "$INCLUDE_FILE")
+          PYTHON_HOME=$(dirname "$(dirname "$INCLUDE_DIR")")
+
+          echo "PYTHON_HOME=${PYTHON_HOME}" >> "$GITHUB_ENV"
+          echo "Python home: ${PYTHON_HOME}"
+
+          echo ""
+          echo "=== Headers ==="
+          find "${PYTHON_HOME}/include" -name "Python.h" -type f
+
+          echo ""
+          echo "=== Static libraries ==="
+          find "${PYTHON_HOME}" -name "*.a" -o -name "*.lib" | head -10
+
+      # ============================================================
+      # Step 7: 生成 pyo3 配置文件
+      # ============================================================
+      - name: Generate pyo3 config
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          INCLUDE_DIR=$(find "${PYTHON_HOME}/include" -name "Python.h" -type f -exec dirname {} \; 2>/dev/null | head -1)
+
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            LIB_DIR="${PYTHON_HOME}/libs"
+            if [ ! -d "$LIB_DIR" ]; then
+              LIB_DIR="${PYTHON_HOME}/lib"
+            fi
+            LIB_NAME="python312"
+          else
+            LIB_DIR="${PYTHON_HOME}/lib"
+            LIB_NAME="python3.12"
+          fi
+
+          echo "INCLUDE_DIR = ${INCLUDE_DIR}"
+          echo "LIB_DIR     = ${LIB_DIR}"
+          echo "LIB_NAME    = ${LIB_NAME}"
+
+          cat > /tmp/pyo3-config.txt << PYEOF
+          implementation=CPython
+          version=3.12
+          shared=false
+          abi3=false
+          lib_name=${LIB_NAME}
+          lib_dir=${LIB_DIR}
+          includes=${INCLUDE_DIR}
+          executable=${PYTHON_HOME}/bin/python3
+          pointer_width=64
+          build_flags=
+          suppress_build_script_link_lines=false
+          PYEOF
+
+          echo ""
+          echo "=== pyo3 config ==="
+          cat /tmp/pyo3-config.txt
+
+      # ============================================================
+      # Step 8: 编译 pycn（静态链接 Python）
+      # ============================================================
+      - name: Build pycn (static linked)
+        shell: bash
+        run: |
+          export PYO3_CONFIG_FILE=/tmp/pyo3-config.txt
+          export PYCN_STATIC_PYTHON=1
+          cargo build -p pycn --release --target ${{ matrix.target }} --features static-python
+
+      # ============================================================
+      # Step 9: 去除调试符号（减小二进制体积）
+      # ============================================================
+      - name: Strip binary
+        shell: bash
+        run: |
+          TARGET_DIR="target/${{ matrix.target }}/release"
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            BIN="${TARGET_DIR}/pycn.exe"
+          else
+            BIN="${TARGET_DIR}/pycn"
+          fi
+
+          if [ ! -f "$BIN" ]; then
+            echo "::error::Binary not found: ${BIN}"
+            ls -la "${TARGET_DIR}/" || true
+            exit 1
+          fi
+
+          echo "Before strip: $(ls -lh "$BIN" | awk '{print $5}')"
+          strip "$BIN" 2>/dev/null || echo "(strip not available, skipping)"
+          echo "After strip:  $(ls -lh "$BIN" | awk '{print $5}')"
+
+      # ============================================================
+      # Step 10: 打包发布产物
+      #   产物结构:
+      #     pycn-{platform}-{arch}/
+      #       ├── pycn(.exe)
+      #       └── python-stdlib/
+      #           └── python3.12/
+      #               └── (标准库 .py 文件)
+      # ============================================================
+      - name: Package release artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TARGET_DIR="target/${{ matrix.target }}/release"
+
+          # 确定二进制文件名
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            BIN_FILE="${TARGET_DIR}/pycn.exe"
+            BIN_EXT=".exe"
+          else
+            BIN_FILE="${TARGET_DIR}/pycn"
+            BIN_EXT=""
+          fi
+
+          # 检查二进制
+          if [ ! -f "${BIN_FILE}" ]; then
+            echo "::error::Binary not found: ${BIN_FILE}"
+            ls -la "${TARGET_DIR}/" || true
+            exit 1
+          fi
+
+          echo "Binary: ${BIN_FILE} ($(ls -lh "${BIN_FILE}" | awk '{print $5}'))"
+
+          # ---- 创建软件包目录 ----
+          PKG_DIR="pycn-${{ matrix.platform }}-${{ matrix.arch }}"
+          mkdir -p "${PKG_DIR}/python-stdlib"
+
+          # 复制二进制
+          cp "${BIN_FILE}" "${PKG_DIR}/pycn${BIN_EXT}"
+
+          # ---- 复制 Python 标准库 ----
+          # 优先级: lib/python3.x/ > Lib/ (Windows)
+          STDLIB_SRC=$(find "${PYTHON_HOME}" -maxdepth 3 -type d -name "python3.*" ! -path "*/__pycache__/*" 2>/dev/null | head -1)
+
+          if [ -z "$STDLIB_SRC" ]; then
+            # Windows: Lib/ 目录
+            STDLIB_SRC=$(find "${PYTHON_HOME}" -maxdepth 2 -type d -name "Lib" 2>/dev/null | head -1)
+          fi
+
+          if [ -z "$STDLIB_SRC" ]; then
+            echo "::warning::Python stdlib not found, searching..."
+            find "${PYTHON_HOME}" -maxdepth 3 -type d | sort
+          else
+            echo "Stdlib source: ${STDLIB_SRC}"
+            STDLIB_DEST="${PKG_DIR}/python-stdlib/$(basename "${STDLIB_SRC}")"
+            mkdir -p "${STDLIB_DEST}"
+
+            cp -r "${STDLIB_SRC}"/* "${STDLIB_DEST}/" 2>/dev/null || true
+
+            # 删除不需要的目录以减小体积
+            rm -rf "${STDLIB_DEST}/test"        2>/dev/null || true
+            rm -rf "${STDLIB_DEST}/tkinter"     2>/dev/null || true
+            rm -rf "${STDLIB_DEST}/idlelib"     2>/dev/null || true
+            rm -rf "${STDLIB_DEST}/ensurepip"   2>/dev/null || true
+            rm -rf "${STDLIB_DEST}/lib2to3"     2>/dev/null || true
+            rm -rf "${STDLIB_DEST}/distutils"   2>/dev/null || true
+            rm -rf "${STDLIB_DEST}/site-packages" 2>/dev/null || true
+            rm -rf "${STDLIB_DEST}/turtledemo"  2>/dev/null || true
+            rm -rf "${STDLIB_DEST}/__pycache__" 2>/dev/null || true
+
+            # 删除 .pyc/.pyo 文件
+            find "${STDLIB_DEST}" -name "*.pyc" -delete 2>/dev/null || true
+            find "${STDLIB_DEST}" -name "*.pyo" -delete 2>/dev/null || true
+
+            echo "Stdlib size: $(du -sh "${STDLIB_DEST}" | cut -f1)"
+          fi
+
+          echo ""
+          echo "=== Package: ${PKG_DIR} ==="
+          ls -lh "${PKG_DIR}/"
+          echo "Total: $(du -sh "${PKG_DIR}" | cut -f1)"
+
+          # ---- 创建归档 ----
+          mkdir -p release
+
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            ARCHIVE="pycn_${{ matrix.platform }}_${{ matrix.arch }}.zip"
+            (cd "${PKG_DIR}" && zip -qr "../${ARCHIVE}" .)
+            mv "${PKG_DIR}/../${ARCHIVE}" "release/${ARCHIVE}"
+          else
+            ARCHIVE="pycn_${{ matrix.platform }}_${{ matrix.arch }}.tar.gz"
+            tar -czf "${ARCHIVE}" "${PKG_DIR}/"
+            mv "${ARCHIVE}" "release/${ARCHIVE}"
+          fi
+
+          # 也单独保留原始二进制
+          cp "${BIN_FILE}" "release/pycn-${{ matrix.platform }}-${{ matrix.arch }}${BIN_EXT}"
+
+          echo ""
+          echo "=== Release artifacts ==="
+          ls -lh release/
+
+      # ============================================================
+      # Step 11: 上传构建产物
+      # ============================================================
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: pycn-${{ matrix.platform }}-${{ matrix.arch }}
+          path: release/*
+          if-no-files-found: error
+
+  # ============================================================
+  # 发布任务：当推送 v* tag 时创建 GitHub Release
+  # ============================================================
+  release:
+    needs: [extract-version, build]
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v7
+        with:
+          path: artifacts
+
+      - name: List artifacts
+        run: |
+          echo "=== Downloaded artifacts ==="
+          find artifacts -type f -exec ls -lh {} \;
+
+      - name: Determine release tag
+        id: tag
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="v${{ needs.extract-version.outputs.version }}"
+          elif [ "${{ github.ref }}" = "refs/heads/release" ]; then
+            TAG="v${{ needs.extract-version.outputs.version }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Release tag: ${TAG}"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          VERSION="${{ needs.extract-version.outputs.version }}"
+
+          # 写入 release notes
+          cat > /tmp/release-notes.md << 'NOTES_EOF'
+          ## 🚀 PyCN Standalone — 无需安装 Python
+
+          本构建将 CPython 3.12 **静态链接**到 pycn 二进制中，开箱即用。
+
+          | 平台 | 架构 | 下载 |
+          |------|------|------|
+          | Linux | x86_64 | `pycn_linux_x64.tar.gz` |
+          | Linux | aarch64 | `pycn_linux_arm64.tar.gz` |
+          | macOS | x86_64 | `pycn_macos_x64.tar.gz` |
+          | macOS | aarch64 | `pycn_macos_arm64.tar.gz` |
+          | Windows | x86_64 | `pycn_windows_x64.zip` |
+          | Windows | aarch64 | `pycn_windows_arm64.zip` |
+
+          ### 使用方法
+
+          ```bash
+          # 解压后即可使用
+          tar -xzf pycn_linux_x64.tar.gz
+          cd pycn-linux-x64
+          ./pycn run your_file.pycn
+          ```
+
+          > 💡 `pycn` 二进制与 `python-stdlib/` 目录需放在同一目录下。
+          NOTES_EOF
+
+          # 追加最近一条 commit message
+          echo "" >> /tmp/release-notes.md
+          git --no-pager log -1 --pretty=format:"%s" "${{ github.sha }}" >> /tmp/release-notes.md 2>/dev/null || true
+
+          PRERELEASE_FLAG=""
+          if [ "${{ github.ref }}" != "refs/heads/release" ] && [ "${{ github.event.inputs.prerelease }}" = "true" ]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+
+          # 删除已存在的同 tag release（若存在）
+          gh release delete "${TAG}" --yes 2>/dev/null || true
+          git push origin ":refs/tags/${TAG}" 2>/dev/null || true
+          sleep 2
+
+          # 创建 Release
+          gh release create "${TAG}" \
+            --title "PyCN ${VERSION}" \
+            --notes-file /tmp/release-notes.md \
+            --target "${{ github.sha }}" \
+            ${PRERELEASE_FLAG}
+
+          # 上传所有产物
+          find artifacts -type f | while read -r file; do
+            echo "Uploading: ${file}"
+            gh release upload "${TAG}" "$file" --clobber
+          done
+
+          echo "✅ Release ${TAG} created!"

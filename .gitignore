@@ -8,3 +8,10 @@ __pycache__
 venv
 .venv
 **/dist
+# 静态 Python 构建产物（不会被提交）
+build/
+# 由 scripts/setup-dev.sh 下载的 Python 标准库（不会被提交）
+python-stdlib/
+# 由 scripts/setup-dev.sh 自动生成的 cargo 配置（不会被提交）
+.cargo
+.cargo/**
