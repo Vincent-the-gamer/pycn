@@ -8,14 +8,6 @@
 
 <br/>
 
-# 游乐场
-
-快速体验**Pycn**：https://mayu.vince-g.xyz/code-runner
-
-记得把语言切换至 `pycn`
-
-![playground](.github/playground.png)
-
 # 预览
 
 ![preview](.github/preview.png)
