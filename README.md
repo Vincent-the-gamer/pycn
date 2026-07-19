@@ -14,7 +14,7 @@
 
 # 使用文档
 
-在这里查看PyCN使用文档：https://pycn.vince-g.xyz/zh_hans/
+在这里查看PyCN使用文档：https://pycn.vincentthegamer.dpdns.org/zh_hans/
 
 # 项目结构
 

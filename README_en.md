@@ -14,7 +14,7 @@
 
 # Documentation
 
-See PyCN docs at: https://pycn.vince-g.xyz/
+See PyCN docs at: https://pycn.vincentthegamer.dpdns.org
 
 # Project Structure
 
