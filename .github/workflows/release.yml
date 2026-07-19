@@ -217,7 +217,7 @@ jobs:
           cat > /tmp/pyo3-config.txt << PYEOF
           implementation=CPython
           version=3.12
-          shared=false
+          shared=true
           abi3=false
           lib_name=${LIB_NAME}
           lib_dir=${LIB_DIR}
@@ -305,6 +305,56 @@ jobs:
 
           # 复制二进制
           cp "${BIN_FILE}" "${PKG_DIR}/pycn${BIN_EXT}"
+
+          # ---- 复制 Python 动态库（运行时需要） ----
+          echo ""
+          echo "--- Bundling Python shared library ---"
+
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            # Windows: 复制 python312.dll
+            PYTHON_DLL=$(find "${PYTHON_HOME}" -maxdepth 3 -name "python312.dll" -type f 2>/dev/null | head -1)
+            if [ -n "$PYTHON_DLL" ]; then
+              cp "$PYTHON_DLL" "${PKG_DIR}/"
+              echo "  Copied: $(basename "$PYTHON_DLL")"
+            fi
+            # 也检查 python3.dll
+            PYTHON3_DLL=$(find "${PYTHON_HOME}" -maxdepth 3 -name "python3.dll" -type f 2>/dev/null | head -1)
+            if [ -n "$PYTHON3_DLL" ]; then
+              cp "$PYTHON3_DLL" "${PKG_DIR}/"
+              echo "  Copied: $(basename "$PYTHON3_DLL")"
+            fi
+
+          elif [ "${{ runner.os }}" = "macOS" ]; then
+            # macOS: 复制 libpython3.12.dylib 并修正 install name
+            PYTHON_DYLIB=$(find "${PYTHON_HOME}/lib" -maxdepth 1 -name "libpython3.12*.dylib" -type f 2>/dev/null | head -1)
+            if [ -n "$PYTHON_DYLIB" ]; then
+              cp "$PYTHON_DYLIB" "${PKG_DIR}/"
+              DYLIB_NAME=$(basename "$PYTHON_DYLIB")
+              echo "  Copied: ${DYLIB_NAME}"
+
+              # 修正 dylib 自身的 install name 为 @rpath 相对路径
+              install_name_tool -id "@rpath/${DYLIB_NAME}" "${PKG_DIR}/${DYLIB_NAME}" 2>/dev/null || true
+
+              # 修正二进制中对 dylib 的引用路径
+              OLD_ID=$(otool -L "${PKG_DIR}/pycn" 2>/dev/null | grep libpython | awk '{print $1}')
+              if [ -n "$OLD_ID" ]; then
+                echo "  Fixing load path: ${OLD_ID} → @rpath/${DYLIB_NAME}"
+                install_name_tool -change "$OLD_ID" "@rpath/${DYLIB_NAME}" "${PKG_DIR}/pycn"
+              fi
+            else
+              echo "  ::warning::libpython3.12.dylib not found in ${PYTHON_HOME}/lib"
+            fi
+
+          else
+            # Linux: 复制 libpython3.12.so*（含符号链接）
+            if ls "${PYTHON_HOME}/lib"/libpython3.12.so* 2>/dev/null; then
+              cp -P "${PYTHON_HOME}/lib"/libpython3.12.so* "${PKG_DIR}/" 2>/dev/null || true
+              echo "  Copied Python shared libraries:"
+              ls -lh "${PKG_DIR}"/libpython3.12.so* 2>/dev/null || true
+            else
+              echo "  ::warning::libpython3.12.so* not found in ${PYTHON_HOME}/lib"
+            fi
+          fi
 
           # ---- 复制 Python 标准库 ----
           # 优先级: lib/python3.x/ > Lib/ (Windows)
