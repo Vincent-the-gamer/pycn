@@ -418,8 +418,8 @@ jobs:
 
           if [ "${{ runner.os }}" = "Windows" ]; then
             ARCHIVE="pycn_${{ matrix.platform }}_${{ matrix.arch }}.zip"
-            (cd "${PKG_DIR}" && zip -qr "../${ARCHIVE}" .)
-            mv "${PKG_DIR}/../${ARCHIVE}" "release/${ARCHIVE}"
+            powershell -Command "Compress-Archive -Path '${PKG_DIR}\*' -DestinationPath '${ARCHIVE}'"
+            mv "${ARCHIVE}" "release/${ARCHIVE}"
           else
             ARCHIVE="pycn_${{ matrix.platform }}_${{ matrix.arch }}.tar.gz"
             tar -czf "${ARCHIVE}" "${PKG_DIR}/"
