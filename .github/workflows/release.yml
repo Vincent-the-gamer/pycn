@@ -210,9 +210,19 @@ jobs:
               LIB_DIR="${PYTHON_HOME}/lib"
             fi
             LIB_NAME="python312"
+            # MSVC 的 link.exe 不认识 /tmp 开头的 Unix 路径，
+            # 需要将路径转换为 Windows 原生格式（带盘符）。
+            LIB_DIR=$(cygpath -w "$LIB_DIR")
+            INCLUDE_DIR=$(cygpath -w "$INCLUDE_DIR")
+            PYTHON_EXE="${PYTHON_HOME}/python.exe"
+            if [ ! -f "$PYTHON_EXE" ]; then
+              PYTHON_EXE="${PYTHON_HOME}/bin/python3.exe"
+            fi
+            PYTHON_EXE=$(cygpath -w "$PYTHON_EXE")
           else
             LIB_DIR="${PYTHON_HOME}/lib"
             LIB_NAME="python3.12"
+            PYTHON_EXE="${PYTHON_HOME}/bin/python3"
           fi
 
           echo "INCLUDE_DIR = ${INCLUDE_DIR}"
@@ -227,7 +237,7 @@ jobs:
           lib_name=${LIB_NAME}
           lib_dir=${LIB_DIR}
           includes=${INCLUDE_DIR}
-          executable=${PYTHON_HOME}/bin/python3
+          executable=${PYTHON_EXE}
           pointer_width=64
           build_flags=
           suppress_build_script_link_lines=false
