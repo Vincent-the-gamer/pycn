@@ -173,10 +173,15 @@ jobs:
             exit 1
           fi
 
-          # Python.h 在 include/python3.12/Python.h
-          # 往上两级得到 Python 安装根目录
+          # 从 Python.h 的位置逐级向上找到 include 目录，
+          # 其父目录就是 Python 安装根目录。
+          # 这样可以兼容不同平台的目录深度（如 include/Python.h
+          # 或 include/python3.12/Python.h）。
           INCLUDE_DIR=$(dirname "$INCLUDE_FILE")
-          PYTHON_HOME=$(dirname "$(dirname "$INCLUDE_DIR")")
+          while [ "$INCLUDE_DIR" != "/" ] && [ "$(basename "$INCLUDE_DIR")" != "include" ]; do
+            INCLUDE_DIR=$(dirname "$INCLUDE_DIR")
+          done
+          PYTHON_HOME=$(dirname "$INCLUDE_DIR")
 
           echo "PYTHON_HOME=${PYTHON_HOME}" >> "$GITHUB_ENV"
           echo "Python home: ${PYTHON_HOME}"
