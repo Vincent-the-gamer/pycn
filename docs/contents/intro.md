@@ -63,29 +63,26 @@ After downloading and extracting, you can run PyCN directly:
 
 ### Development Build (Recommended)
 
-Run the setup script once, then `cargo build` / `cargo run` works out of the box:
+No setup required — the first `cargo build` automatically downloads a pre-built standalone Python (~25 MB) for static linking; the standard library itself is downloaded on first run when not found:
 
 ```shell
-# One-click dev environment setup (downloads standalone Python, generates config, copies stdlib)
-bash scripts/setup-dev.sh
-
-# Build pycn
+# Build pycn (auto-downloads standalone Python on first build)
 cargo build -p pycn --release
 
 # Run an example
 cargo run -p pycn --release -- run examples/打印.pycn
 ```
 
-What `setup-dev.sh` does:
+What the first build does automatically:
 
-1. Downloads a pre-built standalone Python from [python-build-standalone](https://github.com/astral-sh/python-build-standalone) into `build/pbs-python/`
-2. Generates `build/pyo3-config.txt` (pyo3 linking configuration)
-3. Copies the Python standard library to `python-stdlib/` (loaded at runtime)
-4. Writes `.cargo/config.toml` (auto-sets `PYO3_CONFIG_FILE` and `PYCN_STATIC_PYTHON` env vars)
+1. Downloads a pre-built standalone Python from [python-build-standalone](https://github.com/astral-sh/python-build-standalone) into `build/python-static/`
+2. Statically links `libpython3.12`, producing a binary independent of the system Python
+
+The standard library is not handled at build time: on first run, `pycn` auto-downloads it (~25 MB, once) if `python-stdlib/` is not found next to the binary.
 
 > [!NOTE]
-> - To use the system Python instead, delete `.cargo/config.toml` and build with `cargo build --no-default-features`
-> - `cargo clean` will not remove `python-stdlib/` (it's at the project root, not inside `target/`)
+> - To use the system Python instead, build with `cargo build --no-default-features`
+> - `cargo clean` will not remove the `build/` cache (it lives at the project root, not inside `target/`); `python-stdlib/` is generated at runtime
 
 ### Other Crates
 
@@ -109,7 +106,7 @@ cargo build -p http-server --release
 bash scripts/build-release.sh
 ```
 
-This script automatically downloads PBS Python, compiles pycn, and packages the binary together with the Python standard library into `target/release/pycn-standalone/`, producing a standalone distribution that does not depend on a system Python installation.
+This script compiles pycn and packages the binary together with the Python standard library into `target/release/pycn-standalone/`, producing a standalone distribution that does not depend on a system Python installation.
 
 
 ## Syntax Highlighting

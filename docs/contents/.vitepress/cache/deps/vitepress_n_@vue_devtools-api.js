@@ -1,4 +1,4 @@
-//#region node_modules/.pnpm/@vue+devtools-shared@8.1.5/node_modules/@vue/devtools-shared/dist/index.js
+//#region node_modules/.pnpm/@vue+devtools-shared@8.2.1/node_modules/@vue/devtools-shared/dist/index.js
 var __create$1 = Object.create;
 var __defProp$1 = Object.defineProperty;
 var __getOwnPropDesc$1 = Object.getOwnPropertyDescriptor;
@@ -3541,9 +3541,7 @@ var getDeep = (object, path) => {
 				case "key":
 					object = keyOfRow;
 					break;
-				case "value":
-					object = object.get(keyOfRow);
-					break;
+				case "value": object = object.get(keyOfRow);
 			}
 		} else object = object[key];
 	}
@@ -3571,9 +3569,7 @@ var setDeep = (object, path, mapper) => {
 				case "key":
 					parent = keyOfRow;
 					break;
-				case "value":
-					parent = parent.get(keyOfRow);
-					break;
+				case "value": parent = parent.get(keyOfRow);
 			}
 		}
 	}
@@ -3598,9 +3594,7 @@ var setDeep = (object, path, mapper) => {
 				if (newKey !== keyToRow) parent.delete(keyToRow);
 				break;
 			}
-			case "value":
-				parent.set(keyToRow, mapper(parent.get(keyToRow)));
-				break;
+			case "value": parent.set(keyToRow, mapper(parent.get(keyToRow)));
 		}
 	}
 	return object;

@@ -173,18 +173,20 @@ var mediumZoom = function mediumZoom(selector) {
 			};
 			var viewportWidth = void 0;
 			var viewportHeight = void 0;
-			if (zoomOptions.container) if (zoomOptions.container instanceof Object) {
-				container = _extends({}, container, zoomOptions.container);
-				viewportWidth = container.width - container.left - container.right - zoomOptions.margin * 2;
-				viewportHeight = container.height - container.top - container.bottom - zoomOptions.margin * 2;
-			} else {
-				var _zoomContainer$getBou = (isNode(zoomOptions.container) ? zoomOptions.container : document.querySelector(zoomOptions.container)).getBoundingClientRect(), _width = _zoomContainer$getBou.width, _height = _zoomContainer$getBou.height, _left = _zoomContainer$getBou.left, _top = _zoomContainer$getBou.top;
-				container = _extends({}, container, {
-					width: _width,
-					height: _height,
-					left: _left,
-					top: _top
-				});
+			if (zoomOptions.container) {
+				if (zoomOptions.container instanceof Object) {
+					container = _extends({}, container, zoomOptions.container);
+					viewportWidth = container.width - container.left - container.right - zoomOptions.margin * 2;
+					viewportHeight = container.height - container.top - container.bottom - zoomOptions.margin * 2;
+				} else {
+					var _zoomContainer$getBou = (isNode(zoomOptions.container) ? zoomOptions.container : document.querySelector(zoomOptions.container)).getBoundingClientRect(), _width = _zoomContainer$getBou.width, _height = _zoomContainer$getBou.height, _left = _zoomContainer$getBou.left, _top = _zoomContainer$getBou.top;
+					container = _extends({}, container, {
+						width: _width,
+						height: _height,
+						left: _left,
+						top: _top
+					});
+				}
 			}
 			viewportWidth = viewportWidth || container.width - zoomOptions.margin * 2;
 			viewportHeight = viewportHeight || container.height - zoomOptions.margin * 2;
@@ -373,9 +375,10 @@ function styleInject(css, ref) {
 	var head = document.head || document.getElementsByTagName("head")[0];
 	var style = document.createElement("style");
 	style.type = "text/css";
-	if (insertAt === "top") if (head.firstChild) head.insertBefore(style, head.firstChild);
-	else head.appendChild(style);
-	else head.appendChild(style);
+	if (insertAt === "top") {
+		if (head.firstChild) head.insertBefore(style, head.firstChild);
+		else head.appendChild(style);
+	} else head.appendChild(style);
 	if (style.styleSheet) style.styleSheet.cssText = css;
 	else style.appendChild(document.createTextNode(css));
 }

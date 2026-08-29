@@ -1,4 +1,4 @@
-import { Dt as mergeProps, G as createBlock, Ht as popScopeId, Jt as renderSlot, K as createCommentVNode, Kn as ref, M as Fragment, Ot as nextTick, Tn as withScopeId, Vt as openBlock, W as createBaseVNode, Wt as pushScopeId, Yt as resolveComponent, a as createApp, ar as normalizeClass, cr as toDisplayString, et as createVNode, ft as guardReactiveProps, nt as defineComponent, or as normalizeProps, pt as h$1, q as createElementBlock, sr as normalizeStyle, w as withKeys, xn as withCtx } from "./vue.runtime.esm-bundler-BTFC--gO.js";
+import { Dt as mergeProps, G as createBlock, Ht as popScopeId, Jt as renderSlot, K as createCommentVNode, Kn as ref, M as Fragment, Ot as nextTick, Tn as withScopeId, Vt as openBlock, W as createBaseVNode, Wt as pushScopeId, Yt as resolveComponent, a as createApp, ar as normalizeClass, cr as toDisplayString, et as createVNode, ft as guardReactiveProps, nt as defineComponent, or as normalizeProps, pt as h$1, q as createElementBlock, sr as normalizeStyle, w as withKeys, xn as withCtx } from "./vue.runtime.esm-bundler-CERQx_4a.js";
 //#region node_modules/.pnpm/@floating-ui+utils@0.2.12/node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs
 /**
 * Custom positioning reference element.
@@ -462,9 +462,7 @@ var flip = function(options) {
 						if (placement) resetPlacement = placement;
 						break;
 					}
-					case "initialPlacement":
-						resetPlacement = initialPlacement;
-						break;
+					case "initialPlacement": resetPlacement = initialPlacement;
 				}
 				if (placement !== resetPlacement) return { reset: { placement: resetPlacement } };
 			}
@@ -616,8 +614,10 @@ var size = function(options) {
 			let availableWidth = overflowAvailableWidth;
 			if (shiftData != null && shiftData.enabled.x) availableWidth = maximumClippingWidth;
 			if (shiftData != null && shiftData.enabled.y) availableHeight = maximumClippingHeight;
-			if (noShift && !alignment) if (isYAxis) availableWidth = width - 2 * max$1(overflow.left, overflow.right);
-			else availableHeight = height - 2 * max$1(overflow.top, overflow.bottom);
+			if (noShift && !alignment) {
+				if (isYAxis) availableWidth = width - 2 * max$1(overflow.left, overflow.right);
+				else availableHeight = height - 2 * max$1(overflow.top, overflow.bottom);
+			}
 			await apply({
 				...state,
 				availableWidth,
@@ -747,9 +747,11 @@ function getBoundingClientRect(element, includeScale, isFixedStrategy, offsetPar
 	const clientRect = element.getBoundingClientRect();
 	const domElement = unwrapElement(element);
 	let scale = FALLBACK_SCALE;
-	if (includeScale) if (offsetParent) {
-		if (isElement(offsetParent)) scale = getScale(offsetParent);
-	} else scale = getScale(element);
+	if (includeScale) {
+		if (offsetParent) {
+			if (isElement(offsetParent)) scale = getScale(offsetParent);
+		} else scale = getScale(element);
+	}
 	const win = domElement ? getWindow(domElement) : window;
 	const addVisualOffsets = !isLayoutViewport() && isFixedStrategy;
 	let x = (clientRect.left + (addVisualOffsets ? ((_win$visualViewport = win.visualViewport) == null ? void 0 : _win$visualViewport.offsetLeft) || 0 : 0)) / scale.x;
@@ -1044,7 +1046,7 @@ var computePosition = (reference, floating, options) => {
 	});
 };
 //#endregion
-//#region node_modules/.pnpm/floating-vue@5.2.2_vue@3.5.40_typescript@5.7.3_/node_modules/floating-vue/dist/floating-vue.mjs
+//#region node_modules/.pnpm/floating-vue@5.2.2_vue@3.5.42_typescript@5.7.3_/node_modules/floating-vue/dist/floating-vue.mjs
 function ye(e, t) {
 	for (const o in t) Object.prototype.hasOwnProperty.call(t, o) && (typeof t[o] == "object" && e[o] ? ye(e[o], t[o]) : e[o] = t[o]);
 }
@@ -2518,7 +2520,7 @@ var Gt = {
 	options: h
 };
 //#endregion
-//#region node_modules/.pnpm/@shikijs+vitepress-twoslash@4.3.1_supports-color@7.2.0_typescript@5.7.3/node_modules/@shikijs/vitepress-twoslash/dist/client.mjs
+//#region node_modules/.pnpm/@shikijs+vitepress-twoslash@4.4.3_supports-color@7.2.0_typescript@5.7.3/node_modules/@shikijs/vitepress-twoslash/dist/client.mjs
 var isMobile = typeof navigator !== "undefined" && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 /**
 * Vue plugin to install FloatingVue with styles.
@@ -2570,7 +2572,10 @@ var TwoslashFloatingVue = { install: (app, options = {}) => {
 				popperTriggers: isMobile ? ["touch"] : ["hover", "touch"],
 				placement: "bottom-start",
 				overflowPadding: 10,
-				delay: 0,
+				delay: {
+					show: 200,
+					hide: 0
+				},
 				handleResize: false,
 				autoHide: true,
 				noAutoFocus: true,

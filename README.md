@@ -25,11 +25,10 @@ pycn/
 ├── parser/          # 核心解析器（logos 词法分析 + 手写递归下降解析）
 ├── parser-wasm/     # 解析器的 WASM 绑定（用于 Web / Node.js）
 ├── http-server/     # HTTP 代码执行服务（基于 Axum）
-├── scripts/         # 构建与开发脚本
-│   ├── setup-dev.sh      # 开发环境一键配置
+├── scripts/         # 构建脚本
 │   └── build-release.sh  # 发布构建与打包
-├── build/           # 构建缓存（PBS Python、pyo3 配置）
-├── python-stdlib/   # Python 标准库副本（由 setup-dev.sh 生成）
+├── build/           # 构建缓存（首次构建自动下载 PBS Python）
+├── python-stdlib/   # Python 标准库副本（首次运行时自动下载安装）
 └── examples/        # 示例代码
 ```
 
@@ -60,29 +59,26 @@ pycn/
 
 ## 开发构建（推荐）
 
-只需运行一次配置脚本，之后 `cargo build` / `cargo run` 开箱即用：
+无需任何配置，首次 `cargo build` 会自动下载预编译的静态 Python（约 25 MB）用于静态链接；Python 标准库则留到首次运行时按需下载：
 
 ```shell
-# 一键配置开发环境（下载独立 Python、生成配置、复制标准库）
-bash scripts/setup-dev.sh
-
-# 编译 pycn
+# 编译 pycn（首次构建自动下载独立 Python）
 cargo build -p pycn --release
 
 # 运行示例
 cargo run -p pycn --release -- run examples/打印.pycn
 ```
 
-`setup-dev.sh` 做了什么：
+首次构建自动完成的工作：
 
-1. 下载 [python-build-standalone](https://github.com/astral-sh/python-build-standalone) 预编译的独立 Python 到 `build/pbs-python/`
-2. 生成 `build/pyo3-config.txt`（pyo3 链接配置）
-3. 复制 Python 标准库到 `python-stdlib/`（运行时加载）
-4. 写入 `.cargo/config.toml`（自动设置 `PYO3_CONFIG_FILE` 和 `PYCN_STATIC_PYTHON` 环境变量）
+1. 下载 [python-build-standalone](https://github.com/astral-sh/python-build-standalone) 预编译的独立 Python 到 `build/python-static/`
+2. 静态链接 `libpython3.12`，生成不依赖系统 Python 的二进制
+
+标准库不在编译期处理：首次运行 `pycn` 时若在二进制附近找不到 `python-stdlib/`，会自动下载（约 25 MB，仅需一次）。
 
 > [!NOTE]
-> - 若需恢复使用系统 Python，删除 `.cargo/config.toml` 后使用 `cargo build --no-default-features` 构建
-> - `cargo clean` 不会删除 `python-stdlib/`（在项目根目录而非 `target/` 中）
+> - 若需使用系统 Python，运行 `cargo build --no-default-features` 构建
+> - `cargo clean` 不会删除 `build/` 缓存（在项目根目录而非 `target/` 中）；`python-stdlib/` 由运行时自动生成
 
 ## 其他 crate 构建
 
@@ -106,7 +102,7 @@ cargo build -p http-server --release
 bash scripts/build-release.sh
 ```
 
-该脚本会自动下载 PBS Python、编译 pycn、并将二进制与 Python 标准库打包到 `target/release/pycn-standalone/`，生成一个不依赖系统 Python 的独立分发包。
+该脚本会编译 pycn，并将二进制与 Python 标准库打包到 `target/release/pycn-standalone/`，生成一个不依赖系统 Python 的独立分发包。
 
 # 开源证书
 

@@ -182,9 +182,10 @@ var DOMIterator = class DOMIterator {
 	*/
 	onIframeReady(ifr, successFn, errorFn) {
 		try {
-			if (ifr.contentWindow.document.readyState === "complete") if (this.isIframeBlank(ifr)) this.observeIframeLoad(ifr, successFn, errorFn);
-			else this.getIframeContents(ifr, successFn, errorFn);
-			else this.observeIframeLoad(ifr, successFn, errorFn);
+			if (ifr.contentWindow.document.readyState === "complete") {
+				if (this.isIframeBlank(ifr)) this.observeIframeLoad(ifr, successFn, errorFn);
+				else this.getIframeContents(ifr, successFn, errorFn);
+			} else this.observeIframeLoad(ifr, successFn, errorFn);
 		} catch (e) {
 			errorFn();
 		}
@@ -287,9 +288,11 @@ var DOMIterator = class DOMIterator {
 	* @access protected
 	*/
 	compareNodeIframe(node, prevNode, ifr) {
-		if (node.compareDocumentPosition(ifr) & Node.DOCUMENT_POSITION_PRECEDING) if (prevNode !== null) {
-			if (prevNode.compareDocumentPosition(ifr) & Node.DOCUMENT_POSITION_FOLLOWING) return true;
-		} else return true;
+		if (node.compareDocumentPosition(ifr) & Node.DOCUMENT_POSITION_PRECEDING) {
+			if (prevNode !== null) {
+				if (prevNode.compareDocumentPosition(ifr) & Node.DOCUMENT_POSITION_FOLLOWING) return true;
+			} else return true;
+		}
 		return false;
 	}
 	/**

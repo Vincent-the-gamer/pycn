@@ -1,5 +1,5 @@
-import { $n as toRefs$1, An as customRef, At as onBeforeMount, Bn as markRaw, Bt as onUpdated, Ft as onMounted, Gn as readonly, In as isReactive, Jn as shallowReadonly, Kn as ref, Ln as isReadonly, M as Fragment, Mn as effectScope, Mt as onBeforeUpdate, Nn as getCurrentScope, Ot as nextTick, Qn as toRef$1, Rn as isRef, U as computed, Ut as provide, Vn as onScopeDispose, Wn as reactive, Yn as shallowRef, Zn as toRaw, _n as watchEffect, er as toValue, gn as watch, ht as hasInjectionContext, jt as onBeforeUnmount, nr as unref, nt as defineComponent, pt as h, qn as shallowReactive, r as TransitionGroup, ut as getCurrentInstance, xt as inject, zt as onUnmounted } from "./vue.runtime.esm-bundler-BTFC--gO.js";
-//#region node_modules/.pnpm/@vueuse+shared@14.3.0_vue@3.5.40_typescript@5.7.3_/node_modules/@vueuse/shared/dist/index.js
+import { $n as toRefs$1, An as customRef, At as onBeforeMount, Bn as markRaw, Bt as onUpdated, Ft as onMounted, Gn as readonly, In as isReactive, Jn as shallowReadonly, Kn as ref, Ln as isReadonly, M as Fragment, Mn as effectScope, Mt as onBeforeUpdate, Nn as getCurrentScope, Ot as nextTick, Qn as toRef$1, Rn as isRef, U as computed, Ut as provide, Vn as onScopeDispose, Wn as reactive, Yn as shallowRef, Zn as toRaw, _n as watchEffect, er as toValue, gn as watch, ht as hasInjectionContext, jt as onBeforeUnmount, nr as unref, nt as defineComponent, pt as h, qn as shallowReactive, r as TransitionGroup, ut as getCurrentInstance, xt as inject, zt as onUnmounted } from "./vue.runtime.esm-bundler-CERQx_4a.js";
+//#region node_modules/.pnpm/@vueuse+shared@14.4.0_vue@3.5.40_typescript@5.7.3_/node_modules/@vueuse/shared/dist/index.js
 /**
 *
 * @deprecated This function will be removed in future version.
@@ -257,7 +257,7 @@ var rand = (min, max) => {
 	return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 var hasOwn = (val, key) => Object.hasOwn(val, key);
-var isIOS = /* @__PURE__ */ getIsIOS();
+var isIOS = /* #__PURE__ */ getIsIOS();
 function getIsIOS() {
 	var _window, _window2, _window3;
 	return isClient && !!((_window = window) === null || _window === void 0 || (_window = _window.navigator) === null || _window === void 0 ? void 0 : _window.userAgent) && (/iP(?:ad|hone|od)/.test(window.navigator.userAgent) || ((_window2 = window) === null || _window2 === void 0 || (_window2 = _window2.navigator) === null || _window2 === void 0 ? void 0 : _window2.maxTouchPoints) > 2 && /iPad|Macintosh/.test((_window3 = window) === null || _window3 === void 0 ? void 0 : _window3.navigator.userAgent));
@@ -270,9 +270,6 @@ function toRef(...args) {
 		set: noop
 	}))) : ref(r);
 }
-/**
-* @internal
-*/
 function createFilterWrapper(filter, fn) {
 	function wrapper(...args) {
 		return new Promise((resolve, reject) => {
@@ -283,6 +280,11 @@ function createFilterWrapper(filter, fn) {
 			})).then(resolve).catch(reject);
 		});
 	}
+	if ("cancel" in filter) Object.assign(wrapper, {
+		cancel: filter.cancel,
+		flush: filter.flush,
+		isPending: filter.isPending
+	});
 	return wrapper;
 }
 var bypassFilter = (invoke) => {
@@ -295,13 +297,15 @@ function debounceFilter(ms, options = {}) {
 	let timer;
 	let maxTimer;
 	let lastRejector = noop;
+	let lastResolve = noop;
+	const _pending = shallowRef(false);
 	const _clearTimeout = (timer) => {
 		clearTimeout(timer);
 		lastRejector();
 		lastRejector = noop;
 	};
 	let lastInvoker;
-	const filter = (invoke) => {
+	const handler = (invoke) => {
 		const duration = toValue(ms);
 		const maxDuration = toValue(options.maxWait);
 		if (timer) _clearTimeout(timer);
@@ -310,24 +314,60 @@ function debounceFilter(ms, options = {}) {
 				_clearTimeout(maxTimer);
 				maxTimer = void 0;
 			}
+			_pending.value = false;
 			return Promise.resolve(invoke());
 		}
+		_pending.value = true;
 		return new Promise((resolve, reject) => {
 			lastRejector = options.rejectOnCancel ? reject : resolve;
+			lastResolve = resolve;
 			lastInvoker = invoke;
 			if (maxDuration && !maxTimer) maxTimer = setTimeout(() => {
 				if (timer) _clearTimeout(timer);
 				maxTimer = void 0;
+				_pending.value = false;
 				resolve(lastInvoker());
 			}, maxDuration);
 			timer = setTimeout(() => {
 				if (maxTimer) _clearTimeout(maxTimer);
 				maxTimer = void 0;
+				_pending.value = false;
 				resolve(invoke());
 			}, duration);
 		});
 	};
-	return filter;
+	return Object.assign(handler, {
+		cancel: () => {
+			if (timer) {
+				_clearTimeout(timer);
+				timer = void 0;
+			}
+			if (maxTimer) {
+				_clearTimeout(maxTimer);
+				maxTimer = void 0;
+			}
+			_pending.value = false;
+			lastResolve = noop;
+		},
+		flush: () => {
+			if (_pending.value) {
+				if (timer) {
+					clearTimeout(timer);
+					timer = void 0;
+				}
+				if (maxTimer) {
+					clearTimeout(maxTimer);
+					maxTimer = void 0;
+				}
+				_pending.value = false;
+				const resolve = lastResolve;
+				lastRejector = noop;
+				lastResolve = noop;
+				resolve(lastInvoker());
+			}
+		},
+		isPending: shallowReadonly(_pending)
+	});
 }
 function throttleFilter(...args) {
 	let lastExec = 0;
@@ -711,9 +751,7 @@ var autoResetRef = refAutoReset;
 * @param  ms          A zero-or-greater delay in milliseconds. For event callbacks, values around 100 or 250 (or even higher) are most useful.
 * @param  options     Options
 *
-* @return A new, debounce, function.
-*
-* @__NO_SIDE_EFFECTS__
+* @return A new, debounced, function with isPending, cancel, and flush properties.
 */
 function useDebounceFn(fn, ms = 200, options = {}) {
 	return createFilterWrapper(debounceFilter(ms, options), fn);
@@ -1854,7 +1892,7 @@ function whenever(source, cb, options) {
 	return stop;
 }
 //#endregion
-//#region node_modules/.pnpm/@vueuse+core@14.3.0_vue@3.5.40_typescript@5.7.3_/node_modules/@vueuse/core/dist/index.js
+//#region node_modules/.pnpm/@vueuse+core@14.4.0_vue@3.5.40_typescript@5.7.3_/node_modules/@vueuse/core/dist/index.js
 function computedAsync(evaluationCallback, initialState, optionsOrRef) {
 	var _globalThis$reportErr;
 	let options;
@@ -2423,9 +2461,9 @@ function isTypedCharValid({ keyCode, metaKey, ctrlKey, altKey }) {
 * @param options
 */
 function onStartTyping(callback, options = {}) {
-	const { document = defaultDocument } = options;
+	const { document = defaultDocument, isTypedCharValid: isTypedCharValidFn = isTypedCharValid, isFocusedElementEditable: isFocusedElementEditableFn = isFocusedElementEditable } = options;
 	const keydown = (event) => {
-		if (!isFocusedElementEditable() && isTypedCharValid(event)) callback(event);
+		if (!isFocusedElementEditableFn() && isTypedCharValidFn(event)) callback(event);
 	};
 	if (document) useEventListener(document, "keydown", keydown, { passive: true });
 }
@@ -3093,7 +3131,8 @@ function useMediaQuery(query, options = {}) {
 	watchEffect(() => {
 		if (ssrSupport.value) {
 			ssrSupport.value = !isSupported.value;
-			matches.value = toValue(query).split(",").some((queryString) => {
+			const queryStrings = toValue(query).split(",");
+			matches.value = queryStrings.some((queryString) => {
 				const not = queryString.includes("not all");
 				const minWidth = queryString.match(/\(\s*min-width:\s*(-?\d+(?:\.\d*)?[a-z]+\s*)\)/);
 				const maxWidth = queryString.match(/\(\s*max-width:\s*(-?\d+(?:\.\d*)?[a-z]+\s*)\)/);
@@ -3393,10 +3432,6 @@ var WRITABLE_PROPERTIES = [
 function useBrowserLocation(options = {}) {
 	const { window = defaultWindow } = options;
 	const refs = Object.fromEntries(WRITABLE_PROPERTIES.map((key) => [key, ref()]));
-	for (const [key, ref] of objectEntries(refs)) watch(ref, (value) => {
-		if (!(window === null || window === void 0 ? void 0 : window.location) || window.location[key] === value) return;
-		window.location[key] = value;
-	});
 	const buildState = (trigger) => {
 		var _window$location;
 		const { state, length } = (window === null || window === void 0 ? void 0 : window.history) || {};
@@ -3411,6 +3446,10 @@ function useBrowserLocation(options = {}) {
 		});
 	};
 	const state = ref(buildState("load"));
+	for (const [key, ref] of objectEntries(refs)) watch(ref, (value) => {
+		if (!(window === null || window === void 0 ? void 0 : window.location) || window.location[key] === value) return;
+		window.location[key] = value;
+	});
 	if (window) {
 		const listenerOptions = { passive: true };
 		useEventListener(window, "popstate", () => state.value = buildState("popstate"), listenerOptions);
@@ -3611,7 +3650,7 @@ function useCloned(source, options = {}) {
 }
 var _global = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
 var globalKey = "__vueuse_ssr_handlers__";
-var handlers = /* @__PURE__ */ getHandlers();
+var handlers = /* #__PURE__ */ getHandlers();
 function getHandlers() {
 	if (!(globalKey in _global)) _global[globalKey] = _global[globalKey] || {};
 	return _global[globalKey];
@@ -3998,7 +4037,8 @@ function useCssVar(prop, target, options = {}) {
 		const el = toValue(elRef);
 		if (el && window && key) {
 			var _window$getComputedSt;
-			variable.value = ((_window$getComputedSt = window.getComputedStyle(el).getPropertyValue(key)) === null || _window$getComputedSt === void 0 ? void 0 : _window$getComputedSt.trim()) || variable.value || initialValue;
+			const value = (_window$getComputedSt = window.getComputedStyle(el).getPropertyValue(key)) === null || _window$getComputedSt === void 0 ? void 0 : _window$getComputedSt.trim();
+			variable.value = value || variable.value || initialValue;
 		}
 	}
 	if (observe) useMutationObserver(elRef, updateCssVar, {
@@ -4283,25 +4323,28 @@ function useDeviceMotion(options = {}) {
 		z: null
 	});
 	function init() {
-		if (window) useEventListener(window, "devicemotion", createFilterWrapper(eventFilter, (event) => {
-			var _event$acceleration, _event$acceleration2, _event$acceleration3, _event$accelerationIn, _event$accelerationIn2, _event$accelerationIn3, _event$rotationRate, _event$rotationRate2, _event$rotationRate3;
-			acceleration.value = {
-				x: ((_event$acceleration = event.acceleration) === null || _event$acceleration === void 0 ? void 0 : _event$acceleration.x) || null,
-				y: ((_event$acceleration2 = event.acceleration) === null || _event$acceleration2 === void 0 ? void 0 : _event$acceleration2.y) || null,
-				z: ((_event$acceleration3 = event.acceleration) === null || _event$acceleration3 === void 0 ? void 0 : _event$acceleration3.z) || null
-			};
-			accelerationIncludingGravity.value = {
-				x: ((_event$accelerationIn = event.accelerationIncludingGravity) === null || _event$accelerationIn === void 0 ? void 0 : _event$accelerationIn.x) || null,
-				y: ((_event$accelerationIn2 = event.accelerationIncludingGravity) === null || _event$accelerationIn2 === void 0 ? void 0 : _event$accelerationIn2.y) || null,
-				z: ((_event$accelerationIn3 = event.accelerationIncludingGravity) === null || _event$accelerationIn3 === void 0 ? void 0 : _event$accelerationIn3.z) || null
-			};
-			rotationRate.value = {
-				alpha: ((_event$rotationRate = event.rotationRate) === null || _event$rotationRate === void 0 ? void 0 : _event$rotationRate.alpha) || null,
-				beta: ((_event$rotationRate2 = event.rotationRate) === null || _event$rotationRate2 === void 0 ? void 0 : _event$rotationRate2.beta) || null,
-				gamma: ((_event$rotationRate3 = event.rotationRate) === null || _event$rotationRate3 === void 0 ? void 0 : _event$rotationRate3.gamma) || null
-			};
-			interval.value = event.interval;
-		}), { passive: true });
+		if (window) {
+			const onDeviceMotion = createFilterWrapper(eventFilter, (event) => {
+				var _event$acceleration, _event$acceleration2, _event$acceleration3, _event$accelerationIn, _event$accelerationIn2, _event$accelerationIn3, _event$rotationRate, _event$rotationRate2, _event$rotationRate3;
+				acceleration.value = {
+					x: ((_event$acceleration = event.acceleration) === null || _event$acceleration === void 0 ? void 0 : _event$acceleration.x) || null,
+					y: ((_event$acceleration2 = event.acceleration) === null || _event$acceleration2 === void 0 ? void 0 : _event$acceleration2.y) || null,
+					z: ((_event$acceleration3 = event.acceleration) === null || _event$acceleration3 === void 0 ? void 0 : _event$acceleration3.z) || null
+				};
+				accelerationIncludingGravity.value = {
+					x: ((_event$accelerationIn = event.accelerationIncludingGravity) === null || _event$accelerationIn === void 0 ? void 0 : _event$accelerationIn.x) || null,
+					y: ((_event$accelerationIn2 = event.accelerationIncludingGravity) === null || _event$accelerationIn2 === void 0 ? void 0 : _event$accelerationIn2.y) || null,
+					z: ((_event$accelerationIn3 = event.accelerationIncludingGravity) === null || _event$accelerationIn3 === void 0 ? void 0 : _event$accelerationIn3.z) || null
+				};
+				rotationRate.value = {
+					alpha: ((_event$rotationRate = event.rotationRate) === null || _event$rotationRate === void 0 ? void 0 : _event$rotationRate.alpha) || null,
+					beta: ((_event$rotationRate2 = event.rotationRate) === null || _event$rotationRate2 === void 0 ? void 0 : _event$rotationRate2.beta) || null,
+					gamma: ((_event$rotationRate3 = event.rotationRate) === null || _event$rotationRate3 === void 0 ? void 0 : _event$rotationRate3.gamma) || null
+				};
+				interval.value = event.interval;
+			});
+			useEventListener(window, "devicemotion", onDeviceMotion, { passive: true });
+		}
 	}
 	const ensurePermissions = async () => {
 		if (!requirePermissions.value) permissionGranted.value = true;
@@ -4608,10 +4651,11 @@ function useDraggable(target, options = {}) {
 		if (!container) return;
 		const targetRect = toValue(target).getBoundingClientRect();
 		const { x, y } = position.value;
-		if (isPointerNearEdge({
+		const relativePosition = {
 			x: x - container.scrollLeft,
 			y: y - container.scrollTop
-		}, container, scrollSettings.margin, targetRect)) startAutoScroll();
+		};
+		if (isPointerNearEdge(relativePosition, container, scrollSettings.margin, targetRect)) startAutoScroll();
 		else stopAutoScroll();
 	};
 	if (toValue(autoScroll)) watch(position, checkAutoScroll);
@@ -4691,7 +4735,7 @@ function useDraggable(target, options = {}) {
 		};
 		useEventListener(draggingHandle, "pointerdown", start, config);
 		useEventListener(draggingElement, "pointermove", move, config);
-		useEventListener(draggingElement, "pointerup", end, config);
+		useEventListener(draggingElement, ["pointerup", "pointercancel"], end, config);
 	}
 	return {
 		...toRefs(position),
@@ -4728,7 +4772,8 @@ function useDropZone(target, options = {}) {
 		};
 		const checkValidity = (items) => {
 			if (_options.checkValidity) return _options.checkValidity(items);
-			const dataTypesValid = checkDataTypes(Array.from(items !== null && items !== void 0 ? items : []).map((item) => item.type));
+			const types = Array.from(items !== null && items !== void 0 ? items : []).map((item) => item.type);
+			const dataTypesValid = checkDataTypes(types);
 			const multipleFilesValid = multiple || items.length <= 1;
 			return dataTypesValid && multipleFilesValid;
 		};
@@ -4770,7 +4815,6 @@ function useDropZone(target, options = {}) {
 						files.value = currentFiles;
 						(_options$onDrop = _options.onDrop) === null || _options$onDrop === void 0 || _options$onDrop.call(_options, currentFiles, event);
 					}
-					break;
 			}
 		};
 		useEventListener(target, "dragenter", (event) => handleDragEvent(event, "enter"));
@@ -4941,6 +4985,61 @@ function useElementHover(el, options = {}) {
 	return isHovered;
 }
 /**
+* react a dom's overflow state
+* @see https://vueuse.org/useElementOverflow
+* @param target
+* @param option
+*/
+function useElementOverflow(target, option = {}) {
+	const { observeMutation = false, onUpdated, window = defaultWindow } = option;
+	const isXOverflowed = shallowRef(false);
+	const isYOverflowed = shallowRef(false);
+	function update(htmlEl) {
+		isXOverflowed.value = htmlEl.scrollWidth > htmlEl.offsetWidth;
+		isYOverflowed.value = htmlEl.scrollHeight > htmlEl.offsetHeight;
+	}
+	const onResizeUpdated = onUpdated;
+	const targetEl = computed(() => {
+		const el = unrefElement(target);
+		if (!el || el instanceof SVGElement) return void 0;
+		return el;
+	});
+	const targets = () => {
+		const el = targetEl.value;
+		if (!el || el instanceof SVGElement) return [];
+		return [el, ...Array.from(el.children).filter((i) => i instanceof HTMLElement)];
+	};
+	useResizeObserver(targets, (entries, observer) => {
+		const el = targetEl.value;
+		if (el) update(el);
+		onResizeUpdated === null || onResizeUpdated === void 0 || onResizeUpdated(entries, observer);
+	}, { window });
+	if (observeMutation) {
+		const onMutationUpdated = onUpdated;
+		useMutationObserver(targets, (entries, observer) => {
+			const el = targetEl.value;
+			if (el) update(el);
+			onMutationUpdated === null || onMutationUpdated === void 0 || onMutationUpdated(entries, observer);
+		}, {
+			window,
+			...typeof observeMutation === "object" ? observeMutation : {
+				childList: true,
+				subtree: true,
+				characterData: true
+			}
+		});
+	}
+	return {
+		isXOverflowed: shallowReadonly(isXOverflowed),
+		isYOverflowed: shallowReadonly(isYOverflowed),
+		stop,
+		update: () => {
+			const el = targetEl.value;
+			if (el && window) update(el);
+		}
+	};
+}
+/**
 * Reactive size of an HTML element.
 *
 * @see https://vueuse.org/useElementSize
@@ -4976,9 +5075,21 @@ function useElementSize(target, initialSize = {
 	}, options);
 	tryOnMounted(() => {
 		const ele = unrefElement(target);
-		if (ele) {
-			width.value = "offsetWidth" in ele ? ele.offsetWidth : initialSize.width;
-			height.value = "offsetHeight" in ele ? ele.offsetHeight : initialSize.height;
+		if (ele && "offsetWidth" in ele) if (box === "content-box" && window) {
+			const cs = window.getComputedStyle(ele);
+			const padX = Number.parseFloat(cs.paddingLeft) + Number.parseFloat(cs.paddingRight);
+			const padY = Number.parseFloat(cs.paddingTop) + Number.parseFloat(cs.paddingBottom);
+			const bdX = Number.parseFloat(cs.borderLeftWidth) + Number.parseFloat(cs.borderRightWidth);
+			const bdY = Number.parseFloat(cs.borderTopWidth) + Number.parseFloat(cs.borderBottomWidth);
+			width.value = ele.offsetWidth - padX - bdX;
+			height.value = ele.offsetHeight - padY - bdY;
+		} else {
+			width.value = ele.offsetWidth;
+			height.value = ele.offsetHeight;
+		}
+		else if (ele) {
+			width.value = initialSize.width;
+			height.value = initialSize.height;
 		}
 	});
 	const stop2 = watch(() => unrefElement(target), (ele) => {
@@ -5078,18 +5189,15 @@ function useElementVisibility(element, options = {}) {
 		isVisible
 	} : isVisible;
 }
-/* #__PURE__ */
 var events = /* @__PURE__ */ new Map();
 /* @__NO_SIDE_EFFECTS__ */
 function useEventBus(key) {
-	const scope = getCurrentScope();
 	function on(listener) {
-		var _scope$cleanups;
 		const listeners = events.get(key) || /* @__PURE__ */ new Set();
 		listeners.add(listener);
 		events.set(key, listeners);
 		const _off = () => off(listener);
-		scope === null || scope === void 0 || (_scope$cleanups = scope.cleanups) === null || _scope$cleanups === void 0 || _scope$cleanups.push(_off);
+		tryOnScopeDispose(_off);
 		return _off;
 	}
 	function once(listener) {
@@ -5462,8 +5570,10 @@ function useFetch(url, ...args) {
 				context,
 				execute
 			}));
-			error.value = errorData;
-			if (options.updateDataOnError) data.value = responseData;
+			if (currentExecuteCounter === executeCounter) {
+				error.value = errorData;
+				if (options.updateDataOnError) data.value = responseData;
+			}
 			errorEvent.trigger(fetchError);
 			if (throwOnFailed) throw fetchError;
 			return null;
@@ -5579,7 +5689,8 @@ function useFileDialog(options = {}) {
 		if (input) {
 			input.type = "file";
 			input.onchange = (event) => {
-				files.value = event.target.files;
+				const result = event.target;
+				files.value = result.files;
 				changeTrigger(files.value);
 			};
 			input.oncancel = () => {
@@ -5981,7 +6092,11 @@ function useGamepad(options = {}) {
 	};
 	const updateGamepadState = () => {
 		const _gamepads = (navigator === null || navigator === void 0 ? void 0 : navigator.getGamepads()) || [];
-		for (const gamepad of _gamepads) if (gamepad && gamepads.value[gamepad.index]) gamepads.value[gamepad.index] = stateFromGamepad(gamepad);
+		for (const gamepad of _gamepads) {
+			if (!gamepad) continue;
+			const index = gamepads.value.findIndex((x) => x.index === gamepad.index);
+			if (index > -1) gamepads.value[index] = stateFromGamepad(gamepad);
+		}
 	};
 	const { isActive, pause, resume } = useRafFn(updateGamepadState);
 	const onGamepadConnected = (gamepad) => {
@@ -6294,7 +6409,8 @@ function useScroll(element, options = {}) {
 	const onScrollHandler = (e) => {
 		var _documentElement;
 		if (!window) return;
-		setArrivedState((_documentElement = e.target.documentElement) !== null && _documentElement !== void 0 ? _documentElement : e.target);
+		const eventTarget = (_documentElement = e.target.documentElement) !== null && _documentElement !== void 0 ? _documentElement : e.target;
+		setArrivedState(eventTarget);
 		isScrolling.value = true;
 		onScrollEndDebounced(e);
 		onScroll(e);
@@ -7269,7 +7385,8 @@ function usePageLeave(options = {}) {
 	const handler = (event) => {
 		if (!window) return;
 		event = event || window.event;
-		isLeft.value = !(event.relatedTarget || event.toElement);
+		const from = event.relatedTarget || event.toElement;
+		isLeft.value = !from;
 	};
 	if (window) {
 		const listenerOptions = { passive: true };
@@ -7350,7 +7467,10 @@ function useParallax(target, options = {}) {
 					default: value = -orientation.beta / 90;
 				}
 				return deviceOrientationRollAdjust(value);
-			} else return mouseRollAdjust(-(y.value - height.value / 2) / height.value);
+			} else {
+				const value = -(y.value - height.value / 2) / height.value;
+				return mouseRollAdjust(value);
+			}
 		}),
 		tilt: computed(() => {
 			if (source.value === "deviceOrientation") {
@@ -7371,7 +7491,10 @@ function useParallax(target, options = {}) {
 					default: value = orientation.gamma / 90;
 				}
 				return deviceOrientationTiltAdjust(value);
-			} else return mouseTiltAdjust((x.value - width.value / 2) / width.value);
+			} else {
+				const value = (x.value - width.value / 2) / width.value;
+				return mouseTiltAdjust(value);
+			}
 		}),
 		source
 	};
@@ -7414,7 +7537,7 @@ function usePerformanceObserver(options, callback) {
 		stop
 	};
 }
-var defaultState = (/* #__PURE__ */ {
+var defaultState = {
 	x: 0,
 	y: 0,
 	pointerId: 0,
@@ -7425,8 +7548,8 @@ var defaultState = (/* #__PURE__ */ {
 	height: 0,
 	twist: 0,
 	pointerType: null
-});
-var keys = /* @__PURE__ */ Object.keys(defaultState);
+};
+var keys = /* #__PURE__ */ Object.keys(defaultState);
 /**
 * Reactive pointer state.
 *
@@ -7577,7 +7700,7 @@ function usePointerSwipe(target, options = {}) {
 			if (!isSwiping.value && isThresholdExceeded.value) isSwiping.value = true;
 			if (isSwiping.value) onSwipe === null || onSwipe === void 0 || onSwipe(e);
 		}, listenerOptions),
-		useEventListener(target, "pointerup", (e) => {
+		useEventListener(target, ["pointerup", "pointercancel"], (e) => {
 			if (!eventIsAllowed(e)) return;
 			if (isSwiping.value) onSwipeEnd === null || onSwipeEnd === void 0 || onSwipeEnd(e, direction.value);
 			isPointerDown.value = false;
@@ -7969,6 +8092,7 @@ function useSpeechRecognition(options = {}) {
 	const isListening = shallowRef(false);
 	const isFinal = shallowRef(false);
 	const result = shallowRef("");
+	const confidence = shallowRef(0);
 	const error = shallowRef(void 0);
 	let recognition;
 	const start = () => {
@@ -7998,9 +8122,10 @@ function useSpeechRecognition(options = {}) {
 		});
 		recognition.onresult = (event) => {
 			const currentResult = event.results[event.resultIndex];
-			const { transcript } = currentResult[0];
+			const { transcript, confidence: alternativeConfidence } = currentResult[0];
 			isFinal.value = currentResult.isFinal;
 			result.value = transcript;
+			confidence.value = alternativeConfidence;
 			error.value = void 0;
 		};
 		recognition.onerror = (event) => {
@@ -8026,9 +8151,10 @@ function useSpeechRecognition(options = {}) {
 	return {
 		isSupported,
 		isListening,
-		isFinal,
+		isFinal: shallowReadonly(isFinal),
 		recognition,
-		result,
+		result: shallowReadonly(result),
+		confidence: shallowReadonly(confidence),
 		error,
 		toggle,
 		start,
@@ -8262,6 +8388,7 @@ function useStorageAsync(key, initialValue, storage, options = {}) {
 	return data;
 }
 var _id = 0;
+var _refCount = /* @__PURE__ */ new WeakMap();
 /**
 * Inject <style> element in head.
 *
@@ -8277,6 +8404,7 @@ function useStyleTag(css, options = {}) {
 	const cssRef = shallowRef(css);
 	let stop = () => {};
 	const load = () => {
+		var _refCount$get;
 		if (!document) return;
 		const el = document.getElementById(id) || document.createElement("style");
 		if (!el.isConnected) {
@@ -8286,6 +8414,7 @@ function useStyleTag(css, options = {}) {
 			document.head.appendChild(el);
 		}
 		if (isLoaded.value) return;
+		_refCount.set(el, ((_refCount$get = _refCount.get(el)) !== null && _refCount$get !== void 0 ? _refCount$get : 0) + 1);
 		stop = watch(cssRef, (value) => {
 			el.textContent = value;
 		}, { immediate: true });
@@ -8294,7 +8423,15 @@ function useStyleTag(css, options = {}) {
 	const unload = () => {
 		if (!document || !isLoaded.value) return;
 		stop();
-		document.head.removeChild(document.getElementById(id));
+		const el = document.getElementById(id);
+		if (el) {
+			var _refCount$get2;
+			const count = ((_refCount$get2 = _refCount.get(el)) !== null && _refCount$get2 !== void 0 ? _refCount$get2 : 1) - 1;
+			if (count <= 0) {
+				_refCount.delete(el);
+				document.head.removeChild(el);
+			} else _refCount.set(el, count);
+		}
 		isLoaded.value = false;
 	};
 	if (immediate && !manual) tryOnMounted(load);
@@ -8809,7 +8946,7 @@ function useTitle(newTitle = null, options = {}) {
 *
 * @see https://easings.net
 */
-var TransitionPresets = /* @__PURE__ */ Object.assign({}, { linear: identity }, {
+var TransitionPresets = /* #__PURE__ */ Object.assign({}, { linear: identity }, {
 	easeInSine: [
 		.12,
 		0,
@@ -9018,7 +9155,8 @@ function transition(source, from, to, options = {}) {
 				return;
 			}
 			const now = Date.now();
-			source.value = interpolation(fromVal, toVal, ease((now - startedAt) / duration));
+			const alpha = ease((now - startedAt) / duration);
+			source.value = interpolation(fromVal, toVal, alpha);
 			if (now < endAt) window === null || window === void 0 || window.requestAnimationFrame(tick);
 			else {
 				source.value = toVal;
@@ -9173,9 +9311,7 @@ function useUserMedia(options = {}) {
 			case "video":
 				if (constraints.value) return constraints.value.video || false;
 				break;
-			case "audio":
-				if (constraints.value) return constraints.value.audio || false;
-				break;
+			case "audio": if (constraints.value) return constraints.value.audio || false;
 		}
 	}
 	async function _start() {
@@ -9292,8 +9428,8 @@ function useVModels(props, emit, options = {}) {
 	for (const key in props) ret[key] = useVModel(props, key, emit, options);
 	return ret;
 }
-function getDefaultScheduler$1(options = { interval: 0 }) {
-	const { interval } = options;
+function getDefaultScheduler$1(options = {}) {
+	const { interval = 0 } = options;
 	if (interval === 0) return;
 	return (fn) => useIntervalFn(fn, interval, {
 		immediate: false,
@@ -9419,11 +9555,12 @@ function createGetDistance(itemSize, source) {
 		return source.value.slice(0, index).reduce((sum, _, i) => sum + itemSize(i), 0);
 	};
 }
-function useWatchForSizes(size, listRef, containerRef, calculateRange) {
+function useWatchForSizes(size, listRef, totalSize, containerRef, calculateRange) {
 	watch([
 		size.width,
 		size.height,
 		listRef,
+		totalSize,
 		containerRef
 	], () => {
 		calculateRange();
@@ -9439,12 +9576,39 @@ var scrollToDictionaryForElementScrollKey = {
 	horizontal: "scrollLeft",
 	vertical: "scrollTop"
 };
-function createScrollTo(type, calculateRange, getDistance, containerRef) {
-	return (index) => {
-		if (containerRef.value) {
-			containerRef.value[scrollToDictionaryForElementScrollKey[type]] = getDistance(index);
-			calculateRange();
+var scrollToDictionaryForElementScrollToKey = {
+	horizontal: "left",
+	vertical: "top"
+};
+var defaultScrollToOptions = {
+	behavior: "auto",
+	block: "start",
+	inline: "nearest"
+};
+function createScrollTo(type, calculateRange, getDistance, containerRef, itemSize) {
+	return (index, options = defaultScrollToOptions) => {
+		if (!containerRef.value) return;
+		options = {
+			...defaultScrollToOptions,
+			...options
+		};
+		let offset = 0;
+		const axisToCheck = options[type === "horizontal" ? "inline" : "block"];
+		if (axisToCheck) {
+			const containerSize = type === "horizontal" ? containerRef.value.clientWidth : containerRef.value.clientHeight;
+			const fullItemSize = typeof itemSize === "number" ? itemSize : itemSize(index);
+			if (axisToCheck === "center") offset = containerSize / 2 - fullItemSize / 2;
+			else if (axisToCheck === "end") offset = containerSize - fullItemSize;
+			else if (axisToCheck === "nearest") {
+				const containerScrollPosition = containerRef.value[scrollToDictionaryForElementScrollKey[type]];
+				if (getDistance(index) > containerScrollPosition + containerSize / 2) offset = containerSize - fullItemSize;
+			}
 		}
+		containerRef.value.scrollTo({
+			[scrollToDictionaryForElementScrollToKey[type]]: getDistance(index) - offset,
+			behavior: options.behavior
+		});
+		calculateRange();
 	};
 }
 function useHorizontalVirtualList(options, list) {
@@ -9457,9 +9621,9 @@ function useHorizontalVirtualList(options, list) {
 	const getDistanceLeft = createGetDistance(itemWidth, source);
 	const offsetLeft = computed(() => getDistanceLeft(state.value.start));
 	const totalWidth = createComputedTotalSize(itemWidth, source);
-	useWatchForSizes(size, source, containerRef, calculateRange);
+	useWatchForSizes(size, source, totalWidth, containerRef, calculateRange);
 	return {
-		scrollTo: createScrollTo("horizontal", calculateRange, getDistanceLeft, containerRef),
+		scrollTo: createScrollTo("horizontal", calculateRange, getDistanceLeft, containerRef, itemWidth),
 		calculateRange,
 		wrapperProps: computed(() => {
 			return { style: {
@@ -9484,10 +9648,10 @@ function useVerticalVirtualList(options, list) {
 	const getDistanceTop = createGetDistance(itemHeight, source);
 	const offsetTop = computed(() => getDistanceTop(state.value.start));
 	const totalHeight = createComputedTotalSize(itemHeight, source);
-	useWatchForSizes(size, source, containerRef, calculateRange);
+	useWatchForSizes(size, source, totalHeight, containerRef, calculateRange);
 	return {
 		calculateRange,
-		scrollTo: createScrollTo("vertical", calculateRange, getDistanceTop, containerRef),
+		scrollTo: createScrollTo("vertical", calculateRange, getDistanceTop, containerRef, itemHeight),
 		containerStyle,
 		wrapperProps: computed(() => {
 			return { style: {
@@ -9678,6 +9842,7 @@ function useWebSocket(url, options = {}) {
 		heartbeatPause === null || heartbeatPause === void 0 || heartbeatPause();
 		wsRef.value.close(code, reason);
 		wsRef.value = void 0;
+		status.value = "CLOSED";
 	};
 	const send = (data, useBuffer = true) => {
 		if (!wsRef.value || status.value !== "OPEN") {
@@ -9900,7 +10065,6 @@ function useWebWorkerFn(fn, options = {}) {
 				default:
 					reject(result);
 					workerTerminate("ERROR");
-					break;
 			}
 		};
 		newWorker.onerror = (e) => {
@@ -10004,4 +10168,4 @@ function useWindowSize(options = {}) {
 	};
 }
 //#endregion
-export { DefaultMagicKeysAliasMap, StorageSerializers, TransitionPresets, assert, asyncComputed, autoResetRef, breakpointsAntDesign, breakpointsBootstrapV5, breakpointsElement, breakpointsMasterCss, breakpointsPrimeFlex, breakpointsQuasar, breakpointsSematic, breakpointsTailwind, breakpointsVuetify, breakpointsVuetifyV2, breakpointsVuetifyV3, bypassFilter, camelize, clamp, cloneFnJSON, computedAsync, computedEager, computedInject, computedWithControl, containsProp, controlledComputed, controlledRef, createDisposableDirective, createEventHook, createFetch, createFilterWrapper, createGlobalState, createInjectionState, createReactiveFn, createRef, createReusableTemplate, createSharedComposable, createSingletonPromise, createTemplatePromise, createUnrefFn, customStorageEventName, debounceFilter, debouncedRef, debouncedWatch, defaultDocument, defaultLocation, defaultNavigator, defaultWindow, eagerComputed, executeTransition, extendRef, formatDate, formatTimeAgo, formatTimeAgoIntl, formatTimeAgoIntlParts, get, getLifeCycleTarget, getSSRHandler, hasOwn, hyphenate, identity, ignorableWatch, increaseWithUnit, injectLocal, invoke, isClient, isDef, isDefined, isIOS, isObject, isWorker, makeDestructurable, mapGamepadToXbox360Controller, noop, normalizeDate, notNullish, now, objectEntries, objectOmit, objectPick, onClickOutside, onElementRemoval, onKeyDown, onKeyPressed, onKeyStroke, onKeyUp, onLongPress, onStartTyping, pausableFilter, pausableWatch, promiseTimeout, provideLocal, provideSSRWidth, pxValue, rand, reactify, reactifyObject, reactiveComputed, reactiveOmit, reactivePick, refAutoReset, refDebounced, refDefault, refManualReset, refThrottled, refWithControl, set, setSSRHandler, syncRef, syncRefs, templateRef, throttleFilter, throttledRef, throttledWatch, timestamp, toArray, toReactive, toRef, toRefs, transition, tryOnBeforeMount, tryOnBeforeUnmount, tryOnMounted, tryOnScopeDispose, tryOnUnmounted, unrefElement, until, useActiveElement, useAnimate, useArrayDifference, useArrayEvery, useArrayFilter, useArrayFind, useArrayFindIndex, useArrayFindLast, useArrayIncludes, useArrayJoin, useArrayMap, useArrayReduce, useArraySome, useArrayUnique, useAsyncQueue, useAsyncState, useBase64, useBattery, useBluetooth, useBreakpoints, useBroadcastChannel, useBrowserLocation, useCached, useClipboard, useClipboardItems, useCloned, useColorMode, useConfirmDialog, useCountdown, useCounter, useCssSupports, useCssVar, useCurrentElement, useCycleList, useDark, useDateFormat, useDebounce, useDebounceFn, useDebouncedRefHistory, useDeviceMotion, useDeviceOrientation, useDevicePixelRatio, useDevicesList, useDisplayMedia, useDocumentVisibility, useDraggable, useDropZone, useElementBounding, useElementByPoint, useElementHover, useElementSize, useElementVisibility, useEventBus, useEventListener, useEventSource, useEyeDropper, useFavicon, useFetch, useFileDialog, useFileSystemAccess, useFocus, useFocusWithin, useFps, useFullscreen, useGamepad, useGeolocation, useIdle, useImage, useInfiniteScroll, useIntersectionObserver, useInterval, useIntervalFn, useKeyModifier, useLastChanged, useLocalStorage, useMagicKeys, useManualRefHistory, useMediaControls, useMediaQuery, useMemoize, useMemory, useMounted, useMouse, useMouseInElement, useMousePressed, useMutationObserver, useNavigatorLanguage, useNetwork, useNow, useObjectUrl, useOffsetPagination, useOnline, usePageLeave, useParallax, useParentElement, usePerformanceObserver, usePermission, usePointer, usePointerLock, usePointerSwipe, usePreferredColorScheme, usePreferredContrast, usePreferredDark, usePreferredLanguages, usePreferredReducedMotion, usePreferredReducedTransparency, usePrevious, useRafFn, useRefHistory, useResizeObserver, useSSRWidth, useScreenOrientation, useScreenSafeArea, useScriptTag, useScroll, useScrollLock, useSessionStorage, useShare, useSorted, useSpeechRecognition, useSpeechSynthesis, useStepper, useStorage, useStorageAsync, useStyleTag, useSupported, useSwipe, useTemplateRefsList, useTextDirection, useTextSelection, useTextareaAutosize, useThrottle, useThrottleFn, useThrottledRefHistory, useTimeAgo, useTimeAgoIntl, useTimeout, useTimeoutFn, useTimeoutPoll, useTimestamp, useTitle, useToNumber, useToString, useToggle, useTransition, useUrlSearchParams, useUserMedia, useVModel, useVModels, useVibrate, useVirtualList, useWakeLock, useWebNotification, useWebSocket, useWebWorker, useWebWorkerFn, useWindowFocus, useWindowScroll, useWindowSize, watchArray, watchAtMost, watchDebounced, watchDeep, watchIgnorable, watchImmediate, watchOnce, watchPausable, watchThrottled, watchTriggerable, watchWithFilter, whenever };
+export { DefaultMagicKeysAliasMap, StorageSerializers, TransitionPresets, assert, asyncComputed, autoResetRef, breakpointsAntDesign, breakpointsBootstrapV5, breakpointsElement, breakpointsMasterCss, breakpointsPrimeFlex, breakpointsQuasar, breakpointsSematic, breakpointsTailwind, breakpointsVuetify, breakpointsVuetifyV2, breakpointsVuetifyV3, bypassFilter, camelize, clamp, cloneFnJSON, computedAsync, computedEager, computedInject, computedWithControl, containsProp, controlledComputed, controlledRef, createDisposableDirective, createEventHook, createFetch, createFilterWrapper, createGlobalState, createInjectionState, createReactiveFn, createRef, createReusableTemplate, createSharedComposable, createSingletonPromise, createTemplatePromise, createUnrefFn, customStorageEventName, debounceFilter, debouncedRef, debouncedWatch, defaultDocument, defaultLocation, defaultNavigator, defaultWindow, eagerComputed, executeTransition, extendRef, formatDate, formatTimeAgo, formatTimeAgoIntl, formatTimeAgoIntlParts, get, getLifeCycleTarget, getSSRHandler, hasOwn, hyphenate, identity, ignorableWatch, increaseWithUnit, injectLocal, invoke, isClient, isDef, isDefined, isFocusedElementEditable, isIOS, isObject, isTypedCharValid, isWorker, makeDestructurable, mapGamepadToXbox360Controller, noop, normalizeDate, notNullish, now, objectEntries, objectOmit, objectPick, onClickOutside, onElementRemoval, onKeyDown, onKeyPressed, onKeyStroke, onKeyUp, onLongPress, onStartTyping, pausableFilter, pausableWatch, promiseTimeout, provideLocal, provideSSRWidth, pxValue, rand, reactify, reactifyObject, reactiveComputed, reactiveOmit, reactivePick, refAutoReset, refDebounced, refDefault, refManualReset, refThrottled, refWithControl, set, setSSRHandler, syncRef, syncRefs, templateRef, throttleFilter, throttledRef, throttledWatch, timestamp, toArray, toReactive, toRef, toRefs, transition, tryOnBeforeMount, tryOnBeforeUnmount, tryOnMounted, tryOnScopeDispose, tryOnUnmounted, unrefElement, until, useActiveElement, useAnimate, useArrayDifference, useArrayEvery, useArrayFilter, useArrayFind, useArrayFindIndex, useArrayFindLast, useArrayIncludes, useArrayJoin, useArrayMap, useArrayReduce, useArraySome, useArrayUnique, useAsyncQueue, useAsyncState, useBase64, useBattery, useBluetooth, useBreakpoints, useBroadcastChannel, useBrowserLocation, useCached, useClipboard, useClipboardItems, useCloned, useColorMode, useConfirmDialog, useCountdown, useCounter, useCssSupports, useCssVar, useCurrentElement, useCycleList, useDark, useDateFormat, useDebounce, useDebounceFn, useDebouncedRefHistory, useDeviceMotion, useDeviceOrientation, useDevicePixelRatio, useDevicesList, useDisplayMedia, useDocumentVisibility, useDraggable, useDropZone, useElementBounding, useElementByPoint, useElementHover, useElementOverflow, useElementSize, useElementVisibility, useEventBus, useEventListener, useEventSource, useEyeDropper, useFavicon, useFetch, useFileDialog, useFileSystemAccess, useFocus, useFocusWithin, useFps, useFullscreen, useGamepad, useGeolocation, useIdle, useImage, useInfiniteScroll, useIntersectionObserver, useInterval, useIntervalFn, useKeyModifier, useLastChanged, useLocalStorage, useMagicKeys, useManualRefHistory, useMediaControls, useMediaQuery, useMemoize, useMemory, useMounted, useMouse, useMouseInElement, useMousePressed, useMutationObserver, useNavigatorLanguage, useNetwork, useNow, useObjectUrl, useOffsetPagination, useOnline, usePageLeave, useParallax, useParentElement, usePerformanceObserver, usePermission, usePointer, usePointerLock, usePointerSwipe, usePreferredColorScheme, usePreferredContrast, usePreferredDark, usePreferredLanguages, usePreferredReducedMotion, usePreferredReducedTransparency, usePrevious, useRafFn, useRefHistory, useResizeObserver, useSSRWidth, useScreenOrientation, useScreenSafeArea, useScriptTag, useScroll, useScrollLock, useSessionStorage, useShare, useSorted, useSpeechRecognition, useSpeechSynthesis, useStepper, useStorage, useStorageAsync, useStyleTag, useSupported, useSwipe, useTemplateRefsList, useTextDirection, useTextSelection, useTextareaAutosize, useThrottle, useThrottleFn, useThrottledRefHistory, useTimeAgo, useTimeAgoIntl, useTimeout, useTimeoutFn, useTimeoutPoll, useTimestamp, useTitle, useToNumber, useToString, useToggle, useTransition, useUrlSearchParams, useUserMedia, useVModel, useVModels, useVibrate, useVirtualList, useWakeLock, useWebNotification, useWebSocket, useWebWorker, useWebWorkerFn, useWindowFocus, useWindowScroll, useWindowSize, watchArray, watchAtMost, watchDebounced, watchDeep, watchIgnorable, watchImmediate, watchOnce, watchPausable, watchThrottled, watchTriggerable, watchWithFilter, whenever };

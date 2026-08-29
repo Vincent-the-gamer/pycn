@@ -8,12 +8,19 @@ edition = "2024"
 default = ["static-python"]
 # 启用静态链接 Python，打包独立运行时（默认开启）
 # 若需使用系统 Python，运行: cargo build --no-default-features
-static-python = []
+# abi3:          编译期无需任何解释器配置（版本由 abi3-py312 指定）
+# extension-module: 让 pyo3 不输出 libpython 链接参数，改由 build.rs 统一负责
+static-python = ["pyo3/abi3", "pyo3/abi3-py312", "pyo3/extension-module"]
 
 [dependencies]
 clap = { version = "4.5.40", features = ["derive"] }
-pyo3 = { version = "0.25.1" }
+# 关闭默认特性（本项目不使用宏）；static-python 特性另行开启 abi3 + extension-module
+pyo3 = { version = "0.25.1", default-features = false }
 parser = { path = "../parser" }
+# 运行时自动下载标准库（static-python 模式下找不到 python-stdlib/ 时使用）
+ureq = { version = "2.12", default-features = false, features = ["tls"] }
+flate2 = "1"
+tar = "0.4"
 
 [build-dependencies]
 pyo3-build-config = "0.25.1"
