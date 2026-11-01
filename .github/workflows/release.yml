@@ -31,7 +31,15 @@ jobs:
         id: version
         shell: bash
         run: |
-          VERSION=$(grep '^package.version' Cargo.toml | head -1 | sed 's/.*= *"\(.*\)"/\1/')
+          # Cargo.toml 可能是 CRLF 换行，必须去掉 \r，否则 tag 会带上回车导致 GitHub 返回 422
+          VERSION=$(grep -m1 '^package\.version' Cargo.toml \
+            | sed -E 's/.*"([^"]+)".*/\1/' \
+            | tr -d '\r\n' \
+            | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
+          if ! printf '%s' "${VERSION}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$'; then
+            echo "::error::无法从 Cargo.toml 提取有效的版本号（得到 '${VERSION}'）"
+            exit 1
+          fi
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Extracted version: ${VERSION}"
 
@@ -499,6 +507,12 @@ jobs:
             TAG="v${{ needs.extract-version.outputs.version }}"
           else
             TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          # 清理可能混入的 CR/LF 和首尾空白，避免 GitHub 返回 422 tag_name is not well-formed
+          TAG=$(printf '%s' "${TAG}" | tr -d '\r\n' | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
+          if ! printf '%s' "${TAG}" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$'; then
+            echo "::error::生成的 release tag 不合法：'${TAG}'"
+            exit 1
           fi
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "Release tag: ${TAG}"
