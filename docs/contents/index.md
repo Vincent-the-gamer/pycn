@@ -16,7 +16,7 @@ hero:
 
 features:
   - title: Programming in full Chinese
-    details: All Chinese literals, operators, built-in functions and keywords.
+    details: Chinese literals, operators, built-in functions and core keywords.
     icon:
       src: "/logo/code.svg"
   - title: Full-width characters supported
@@ -34,5 +34,5 @@ features:
 
 ---
 
-> [!IMPORTANT]
-> This document is not completed!
+> [!TIP]
+> PyCN implements a subset of Python. See [Syntax Reference](/syntax) for the supported keywords, operators, built-ins and methods.

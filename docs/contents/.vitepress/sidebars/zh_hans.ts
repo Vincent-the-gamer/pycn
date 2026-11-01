@@ -7,4 +7,11 @@ export default [
       { text: '基本使用', link: '/zh_hans/basic-usage' },
     ],
   },
+  {
+    text: '参考',
+    collapsed: false,
+    items: [
+      { text: '语法参考', link: '/zh_hans/syntax' },
+    ],
+  },
 ]

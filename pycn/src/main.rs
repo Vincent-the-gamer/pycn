@@ -3,15 +3,15 @@ mod bootstrap;
 use pycn::cli::use_cli;
 
 fn main() {
-    // 手动初始化 Python 解释器（替代 auto-initialize，兼容静态/动态链接）
-    pyo3::prepare_freethreaded_python();
-
-    // static-python 模式下，从二进制所在目录查找自带的 Python 标准库；
-    // 找不到时自动下载（与 scripts/build-release.sh 相同的 python-build-standalone 产物）。
-    // 若下载失败则直接报错退出，绝不回退到系统 Python
+    // static-python 模式下，先从二进制所在目录查找/安装自带的 Python 标准库，
+    // 并设置 PYTHONHOME；必须在初始化 Python 解释器之前完成，否则会回退到
+    // 系统前缀并报 "Could not find platform independent libraries"。
     if cfg!(feature = "static-python") {
         setup_python_home();
     }
+
+    // 手动初始化 Python 解释器（替代 auto-initialize，兼容静态/动态链接）
+    pyo3::prepare_freethreaded_python();
 
     use_cli();
 }
@@ -20,6 +20,8 @@ fn main() {
 /// 只在 `static-python` feature 启用时调用；找不到 stdlib 会自动下载，
 /// 下载失败则退出，绝不回退到系统 Python。
 fn setup_python_home() {
+    // 嵌入式 Python 在进程退出时不会自动 flush 缓冲，强制无缓冲输出
+    unsafe { std::env::set_var("PYTHONUNBUFFERED", "1") };
     let exe_path = match std::env::current_exe() {
         Ok(p) => p,
         Err(e) => {

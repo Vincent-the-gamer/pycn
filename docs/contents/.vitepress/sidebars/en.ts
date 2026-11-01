@@ -7,4 +7,11 @@ export default [
       { text: 'Basic Usage', link: '/basic-usage' },
     ],
   },
+  {
+    text: 'Reference',
+    collapsed: false,
+    items: [
+      { text: 'Syntax Reference', link: '/syntax' },
+    ],
+  },
 ]

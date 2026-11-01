@@ -282,5 +282,6 @@ fn is_windows() -> bool {
 
 fn project_root() -> PathBuf {
     let manifest = env::var("CARGO_MANIFEST_DIR").unwrap_or_default();
-    Path::new(&manifest).join("..").join("..")
+    // CARGO_MANIFEST_DIR 指向 pycn/pycn，项目根是其父目录 pycn/
+    Path::new(&manifest).join("..")
 }

@@ -16,7 +16,7 @@ hero:
 
 features:
   - title: 全中文编程
-    details: 全中文的字面量，运算符，内置函数和关键词。
+    details: 为字面量、运算符、内置函数和常用关键词提供中文写法。
     icon:
       src: "/logo/code.svg"
   - title: 支持全角符号
@@ -33,5 +33,5 @@ features:
       src: "/logo/package.svg"
 ---
 
-> [!IMPORTANT] 重要
-> 该文档尚未完成！
+> [!TIP]
+> PyCN 实现了 Python 的一个子集。受支持的关键词、运算符、内置函数和方法见[语法参考](/zh_hans/syntax)。

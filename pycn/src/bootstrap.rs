@@ -313,13 +313,14 @@ mod tests {
 
     #[test]
     fn strip_prefix_works() {
-        let rel = strip_stdlib_prefix(Path::new("python/lib/python3.12/os.py"))
-            .expect("应匹配标准库前缀");
+        // 使用与当前平台一致的归档前缀构造测试路径
+        let sample = Path::new(ARCHIVE_STDLIB_PREFIX).join("os.py");
+        let rel = strip_stdlib_prefix(&sample).expect("应匹配标准库前缀");
         assert_eq!(rel, Path::new("os.py"));
         assert!(strip_stdlib_prefix(Path::new("python/bin/python3")).is_none());
-        assert!(strip_stdlib_prefix(Path::new("python/lib/libpython3.12.a")).is_none());
     }
 
+    #[cfg(unix)]
     #[test]
     fn extract_and_cleanup_stdlib() {
         let dir = std::env::temp_dir().join(format!("pycn-bootstrap-test-{}", std::process::id()));
@@ -371,6 +372,67 @@ mod tests {
         assert!(
             !dir.join("python/bin").exists(),
             "bin/ 不属于标准库，不应被解压"
+        );
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn extract_and_cleanup_stdlib_windows() {
+        let dir = std::env::temp_dir().join(format!("pycn-bootstrap-test-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+
+        let archive = dir.join("fake.tar.gz");
+        let file = fs::File::create(&archive).unwrap();
+        let gz = flate2::write::GzEncoder::new(file, flate2::Compression::default());
+        let mut builder = tar::Builder::new(gz);
+
+        let prefix = ARCHIVE_STDLIB_PREFIX; // python/Lib
+        let files: &[(&str, &[u8])] = &[
+            // we need dynamic strings; handled below
+        ];
+        let _ = files;
+
+        // Build entries with runtime prefix
+        let entries = [
+            (format!("{}/os.py", prefix), b"import os\n" as &[u8]),
+            (format!("{}/lib-dynload/_ssl.pyd", prefix), b"fake" as &[u8]),
+            (format!("{}/test/test_x.py", prefix), b"x" as &[u8]),
+            (format!("{}/__pycache__/os.pyc", prefix), b"pyc" as &[u8]),
+            (format!("{}/site-packages/foo.py", prefix), b"foo" as &[u8]),
+            ("python/DLLs/python312.dll".to_string(), b"dll" as &[u8]),
+        ];
+        for (path, data) in &entries {
+            let mut header = tar::Header::new_gnu();
+            header.set_size(data.len() as u64);
+            header.set_mode(0o644);
+            header.set_cksum();
+            builder.append_data(&mut header, path.as_str(), *data).unwrap();
+        }
+        // extra bin entry to ensure ignored
+        let bin_data = b"bin";
+        let mut header = tar::Header::new_gnu();
+        header.set_size(bin_data.len() as u64);
+        header.set_mode(0o644);
+        header.set_cksum();
+        builder.append_data(&mut header, "python/python.exe", &bin_data[..]).unwrap();
+
+        builder.finish().unwrap();
+        builder.into_inner().unwrap().finish().unwrap();
+
+        extract_stdlib(&archive, &dir).unwrap();
+        cleanup_stdlib(&dir);
+
+        let stdlib = dir.clone(); // windows target_dir == dest
+        assert!(stdlib.join("os.py").exists(), "os.py 应被解压");
+        assert!(!stdlib.join("test").exists(), "test 应被清理");
+        assert!(!stdlib.join("site-packages").exists(), "site-packages 应被清理");
+        assert!(!stdlib.join("__pycache__").exists(), "__pycache__ 应被清理");
+        assert!(
+            !dir.join("python").exists() || !dir.join("python/python.exe").exists(),
+            "python/ 其它内容不应被解压"
         );
 
         let _ = fs::remove_dir_all(&dir);

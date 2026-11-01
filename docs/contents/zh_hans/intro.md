@@ -32,7 +32,13 @@ def is_prime(num):
     return true
 ```
 
-没错！PyCN和Python的代码风格完全一致，然而如你所见，和我上面说的一样，代码都是中文的！
+没错！PyCN 和 Python 的代码风格完全一致，然而如你所见，和我上面说的一样，代码都是中文的！
+
+## 语言覆盖范围
+
+PyCN 沿用 Python 的语句、表达式和字面量结构，并在执行前把它们翻译回 Python。中文数字、全角符号以及本地 `.pycn` 导入也都在支持范围内。
+
+[语法参考](./syntax.md)列出了全部受支持的关键词、运算符、内置函数和方法，以及尚未实现的语法。
 
 ## 安装 PyCN
 
@@ -103,7 +109,11 @@ cargo build -p http-server --release
 ### 发布构建（打包独立运行时）
 
 ```shell
+# Linux / macOS
 bash scripts/build-release.sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy Bypass -File scripts\build-release.ps1
 ```
 
 该脚本会编译 pycn，并将二进制与 Python 标准库打包到 `target/release/pycn-standalone/`，生成一个不依赖系统 Python 的独立分发包。

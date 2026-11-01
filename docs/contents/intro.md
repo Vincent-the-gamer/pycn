@@ -34,6 +34,12 @@ def is_prime(num):
 
 That's right! PyCN has exactly the same coding style as Python, but as you can see, the PyCN code is in Chinese like I said before.
 
+## Language coverage
+
+PyCN mirrors Python's statements, expressions and data literals, then translates them back to Python before execution. Chinese numerals, full-width punctuation and local `.pycn` imports are supported as well.
+
+The [Syntax Reference](./syntax.md) lists every supported keyword, operator, built-in function and method, along with the constructs that are not implemented yet.
+
 ## Install PyCN
 
 Pre-built binaries are available on [GitHub Releases](https://github.com/Vincent-the-gamer/pycn/releases). Download the archive for your platform, extract it, and you're ready to go.
@@ -103,7 +109,11 @@ cargo build -p http-server --release
 ### Release Build (Standalone Package)
 
 ```shell
+# Linux / macOS
 bash scripts/build-release.sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy Bypass -File scripts\build-release.ps1
 ```
 
 This script compiles pycn and packages the binary together with the Python standard library into `target/release/pycn-standalone/`, producing a standalone distribution that does not depend on a system Python installation.

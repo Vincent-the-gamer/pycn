@@ -338,6 +338,14 @@ jobs:
               cp "$PYTHON3_DLL" "${PKG_DIR}/"
               echo "  Copied: $(basename "$PYTHON3_DLL")"
             fi
+            # Visual C++ 运行时（独立运行需要）
+            for vc in vcruntime140.dll vcruntime140_1.dll; do
+              VC_DLL=$(find "${PYTHON_HOME}" -maxdepth 3 -name "$vc" -type f 2>/dev/null | head -1)
+              if [ -n "$VC_DLL" ]; then
+                cp "$VC_DLL" "${PKG_DIR}/"
+                echo "  Copied: $(basename "$VC_DLL")"
+              fi
+            done
 
           elif [ "${{ runner.os }}" = "macOS" ]; then
             # macOS: 复制 libpython3.12.dylib 并修正 install name
@@ -406,6 +414,21 @@ jobs:
             find "${STDLIB_DEST}" -name "*.pyo" -delete 2>/dev/null || true
 
             echo "Stdlib size: $(du -sh "${STDLIB_DEST}" | cut -f1)"
+
+           # Windows: 额外复制 DLLs 目录（扩展模块），保证完全独立运行
+           if [ "${{ runner.os }}" = "Windows" ]; then
+             DLLS_SRC=$(find "${PYTHON_HOME}" -maxdepth 2 -type d -name "DLLs" 2>/dev/null | head -1)
+             if [ -n "$DLLS_SRC" ]; then
+               DLLS_DEST="${PKG_DIR}/python-stdlib/DLLs"
+               mkdir -p "${DLLS_DEST}"
+               cp -r "${DLLS_SRC}"/* "${DLLS_DEST}/" 2>/dev/null || true
+               rm -rf "${DLLS_DEST}/__pycache__" 2>/dev/null || true
+               find "${DLLS_DEST}" -name "*.pyc" -delete 2>/dev/null || true
+               echo "  Copied DLLs: $(du -sh "${DLLS_DEST}" | cut -f1)"
+             else
+               echo "  ::warning::DLLs directory not found"
+             fi
+           fi
           fi
 
           echo ""

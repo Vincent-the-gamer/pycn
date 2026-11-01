@@ -12,6 +12,10 @@ pub fn run_pycn(pycn_code: &str) {
 
    Python::with_gil(|py| {
       let _ = PyModule::from_code(py, &c_code, c_str!(""), c_str!(""));
+       if let Ok(sys) = py.import("sys") {
+           if let Ok(stdout) = sys.getattr("stdout") { let _ = stdout.call_method0("flush"); }
+           if let Ok(stderr) = sys.getattr("stderr") { let _ = stderr.call_method0("flush"); }
+       }
    });
 }
 
@@ -123,6 +127,16 @@ sys.meta_path.insert(0, InMemoryLoader(__modules__ref__))
         let entry_globals = PyDict::new(py);
         entry_globals.set_item("__name__", "__main__").unwrap();
         exec_func.call1((entry_code.as_str(), entry_globals)).unwrap();
+
+        // 嵌入式解释器不会自动 finalise，手动刷新标准输出/错误，避免缓冲丢失
+        if let Ok(sys) = py.import("sys") {
+            if let Ok(stdout) = sys.getattr("stdout") {
+                let _ = stdout.call_method0("flush");
+            }
+            if let Ok(stderr) = sys.getattr("stderr") {
+                let _ = stderr.call_method0("flush");
+            }
+        }
     });
 }
 

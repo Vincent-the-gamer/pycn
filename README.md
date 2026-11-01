@@ -100,6 +100,9 @@ cargo build -p http-server --release
 
 ```shell
 bash scripts/build-release.sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy Bypass -File scripts\build-release.ps1
 ```
 
 该脚本会编译 pycn，并将二进制与 Python 标准库打包到 `target/release/pycn-standalone/`，生成一个不依赖系统 Python 的独立分发包。
